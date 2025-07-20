@@ -15,14 +15,14 @@
 ### 📋 **Sprint 2: Team Management** (Settimana 2)
 - [x] **Team CRUD**
   - [x] Create team flow (sport, category, season)
-  - [ ] Team dashboard
-  - [ ] Edit team details
-  - [ ] Delete team (with confirmation)
-  - [ ] Team switcher (for multiple teams)
-- [ ] **Team Settings**
-  - [ ] Colors and logo upload
-  - [ ] Home field management
-  - [ ] Season configuration
+  - [x] Team dashboard
+  - [x] Edit team details
+  - [x] Delete team (with confirmation)
+  - [x] Team switcher (for multiple teams)
+- [x] **Team Settings**
+  - [x] Colors and logo upload
+  - [x] Home field management
+  - [x] Season configuration
 
 ### 👥 **Sprint 3: Player Management** (Settimana 3)
 - [ ] **Player Roster**

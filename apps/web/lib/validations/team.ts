@@ -88,7 +88,12 @@ export type CreateTeamStep3Data = z.infer<typeof createTeamStep3Schema>;
 export type CreateTeamFormData = z.infer<typeof createTeamSchema>;
 export type UpdateTeamFormData = z.infer<typeof updateTeamSchema>;
 export type DeleteTeamFormData = z.infer<typeof deleteTeamSchema>;
-export type TeamColors = z.infer<typeof teamColorsSchema>;
+
+// Team Colors type
+export interface TeamColors {
+  primary: string;
+  secondary: string;
+}
 
 // Helper per sport display
 export const SPORT_LABELS: Record<SportTypeEnum, string> = {

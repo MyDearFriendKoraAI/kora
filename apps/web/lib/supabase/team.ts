@@ -1,4 +1,4 @@
-import { SportTypeEnum, CreateTeamFormData, UpdateTeamFormData } from '@/lib/validations/team';
+import { SportTypeEnum, CreateTeamFormData, UpdateTeamFormData, TeamColors } from '@/lib/validations/team';
 import { prisma } from '@/lib/prisma';
 
 export interface Team {
@@ -314,5 +314,51 @@ export async function getTeamStats(teamId: string, userId: string) {
   } catch (error: any) {
     console.error('Error fetching team stats:', error);
     throw new Error(error.message || 'Errore durante il recupero delle statistiche');
+  }
+}
+
+export async function updateTeamColors(teamId: string, colors: TeamColors, userId: string) {
+  try {
+    const team = await prisma.team.update({
+      where: {
+        id: teamId,
+        coachId: userId,
+      },
+      data: {
+        colors: colors,
+      },
+    });
+
+    return { success: true, team };
+  } catch (error: any) {
+    console.error('Error updating team colors:', error);
+    return { error: error.message || 'Errore durante l\'aggiornamento dei colori' };
+  }
+}
+
+export async function updateTeamLogo(teamId: string, file: File, userId: string) {
+  try {
+    // In a real implementation, this would:
+    // 1. Upload file to Supabase Storage
+    // 2. Get the public URL
+    // 3. Update team record with new logo URL
+    
+    // For now, we'll simulate with a mock URL
+    const mockUrl = `https://example.com/team-logos/${teamId}/logo-${Date.now()}.${file.name.split('.').pop()}`;
+    
+    const team = await prisma.team.update({
+      where: {
+        id: teamId,
+        coachId: userId,
+      },
+      data: {
+        logo: mockUrl,
+      },
+    });
+
+    return { success: true, url: mockUrl, team };
+  } catch (error: any) {
+    console.error('Error updating team logo:', error);
+    return { error: error.message || 'Errore durante l\'aggiornamento del logo' };
   }
 }
