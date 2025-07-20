@@ -37,8 +37,7 @@ export const createTeamStep2Schema = z.object({
     .max(30, 'La categoria non può superare i 30 caratteri'),
   season: z
     .string()
-    .min(1, 'La stagione è obbligatoria')
-    .default('2024/2025'),
+    .min(1, 'La stagione è obbligatoria'),
 });
 
 export const createTeamStep3Schema = z.object({

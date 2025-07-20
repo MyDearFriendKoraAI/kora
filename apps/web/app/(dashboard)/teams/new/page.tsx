@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 import { FormSteps, StepNavigation } from '@/components/features/team/FormSteps';
 import { SportSelector } from '@/components/features/team/SportIcon';
 import { ColorPicker } from '@/components/features/team/ColorPicker';
 import { Input } from '@/components/ui/Input';
+import { LimitBanner } from '@/components/features/team/LimitBanner';
 import { 
   createTeamSchema, 
   CreateTeamFormData,
@@ -17,7 +19,7 @@ import {
   SPORT_DEFAULT_COLORS,
   SportTypeEnum 
 } from '@/lib/validations/team';
-import { createTeamAction } from '@/app/actions/team';
+import { createTeamAction, getUserTeamCountAction } from '@/app/actions/team';
 
 const STEPS = [
   { id: 1, title: 'Sport', description: 'Scegli lo sport' },
@@ -28,6 +30,8 @@ const STEPS = [
 export default function NewTeamPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [teamCount, setTeamCount] = useState<{ count: number; maxCount: number } | null>(null);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
   const router = useRouter();
 
   const {
@@ -42,11 +46,32 @@ export default function NewTeamPage() {
     defaultValues: {
       season: '2024/2025',
       colors: SPORT_DEFAULT_COLORS.CALCIO,
+      name: '',
+      category: '',
+      homeField: '',
     },
   });
 
   const watchedSport = watch('sport');
   const watchedColors = watch('colors');
+
+  // Fetch user team count on mount
+  useEffect(() => {
+    async function fetchTeamCount() {
+      try {
+        const result = await getUserTeamCountAction();
+        if (result.success) {
+          setTeamCount({ count: result.count, maxCount: result.maxCount });
+        }
+      } catch (error) {
+        console.error('Error fetching team count:', error);
+      } finally {
+        setIsLoadingCount(false);
+      }
+    }
+
+    fetchTeamCount();
+  }, []);
 
   // Update default colors when sport changes
   const handleSportSelect = (sport: SportTypeEnum) => {
@@ -114,6 +139,20 @@ export default function NewTeamPage() {
     }
   };
 
+  const isAtLimit = teamCount && teamCount.count >= teamCount.maxCount;
+  const isFormDisabled = isAtLimit || isLoadingCount;
+
+  if (isLoadingCount) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,7 +162,19 @@ export default function NewTeamPage() {
           <p className="text-gray-600">Configura la tua squadra in 3 semplici passi</p>
         </div>
 
-        <FormSteps steps={STEPS} currentStep={currentStep}>
+        {/* Team Limit Banner */}
+        {teamCount && (
+          <LimitBanner
+            variant={isAtLimit ? 'error' : 'warning'}
+            currentCount={teamCount.count}
+            maxCount={teamCount.maxCount}
+            className="mb-8"
+          />
+        )}
+
+        {/* Only show form if not at limit */}
+        {!isAtLimit && (
+          <FormSteps steps={STEPS} currentStep={currentStep}>
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Step 1: Sport Selection */}
             {currentStep === 1 && (
@@ -244,6 +295,7 @@ export default function NewTeamPage() {
             />
           </form>
         </FormSteps>
+        )}
       </div>
     </div>
   );

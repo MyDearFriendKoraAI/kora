@@ -7,6 +7,7 @@ interface TeamOverviewProps {
     playersCount: number;
     trainingsCount: number;
     upcomingTrainings: number;
+    assistantsCount?: number;
     lastTraining?: string;
     nextTraining?: string;
   };
@@ -49,6 +50,19 @@ export function TeamOverview({ team, stats }: TeamOverviewProps) {
       color: 'green',
     },
     {
+      title: 'Staff Tecnico',
+      value: (stats.assistantsCount || 0) + 1, // +1 for the mister
+      subtitle: `1 mister + ${stats.assistantsCount || 0} vice`,
+      icon: (
+        <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+      ),
+      action: 'Gestisci Staff',
+      actionHref: `/teams/${team.id}/members`,
+      color: 'orange',
+    },
+    {
       title: 'Prossimi eventi',
       value: stats.upcomingTrainings,
       subtitle: 'in programma',
@@ -66,7 +80,7 @@ export function TeamOverview({ team, stats }: TeamOverviewProps) {
   return (
     <div className="space-y-8">
       {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card) => (
           <div key={card.title} className="bg-gray-50 rounded-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
@@ -87,6 +101,7 @@ export function TeamOverview({ team, stats }: TeamOverviewProps) {
                 inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors
                 ${card.color === 'blue' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
                   card.color === 'green' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                  card.color === 'orange' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' :
                   'bg-purple-100 text-purple-700 hover:bg-purple-200'
                 }
               `}

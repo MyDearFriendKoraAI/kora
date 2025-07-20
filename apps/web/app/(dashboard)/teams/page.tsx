@@ -2,9 +2,92 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { TeamCard, TeamCardSkeleton } from '@/components/features/team/TeamCard';
-import { getTeamsByUserId } from '@/lib/supabase/team';
+import { LimitBanner } from '@/components/features/team/LimitBanner';
+import { getTeamsByUserId, getTeamCountByUserId } from '@/lib/supabase/team';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+
+async function TeamsHeader() {
+  const supabase = createClient();
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    redirect('/login');
+  }
+
+  const teamCount = await getTeamCountByUserId(user.id);
+  const maxCount = 2;
+  const isAtLimit = teamCount >= maxCount;
+
+  return (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Le mie squadre</h1>
+          <p className="text-gray-600">
+            {teamCount > 0 
+              ? `${teamCount} di ${maxCount} squadre utilizzate`
+              : 'Gestisci tutte le tue squadre in un posto'
+            }
+          </p>
+        </div>
+        
+        {/* Desktop button */}
+        <div className="hidden sm:block">
+          {isAtLimit ? (
+            <div className="relative group">
+              <Button disabled className="bg-gray-400 cursor-not-allowed">
+                Nuova Squadra
+              </Button>
+              <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                Hai raggiunto il limite massimo di squadre
+              </div>
+            </div>
+          ) : (
+            <Link href="/teams/new">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Nuova Squadra
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* Limit Banner - Show only when at limit */}
+      {isAtLimit && (
+        <LimitBanner
+          variant="error"
+          currentCount={teamCount}
+          maxCount={maxCount}
+        />
+      )}
+
+      {/* Mobile floating button */}
+      <div className="sm:hidden fixed bottom-20 right-4 z-40">
+        {isAtLimit ? (
+          <button 
+            disabled
+            className="bg-gray-400 text-white rounded-full p-4 shadow-lg cursor-not-allowed"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        ) : (
+          <Link href="/teams/new">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </Link>
+        )}
+      </div>
+    </>
+  );
+}
 
 async function TeamsGrid() {
   const supabase = createClient();
@@ -50,6 +133,7 @@ async function TeamsGrid() {
           logo={team.logo}
           colors={team.colors}
           playerCount={team._count?.players || 0}
+          role="owner" // All teams in this view are owned by the user
         />
       ))}
     </div>
@@ -66,41 +150,34 @@ function TeamsGridSkeleton() {
   );
 }
 
+function TeamsHeaderSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="hidden sm:block">
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TeamsPage() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Le mie squadre</h1>
-          <p className="text-gray-600">Gestisci tutte le tue squadre in un posto</p>
-        </div>
-        
-        {/* Desktop button */}
-        <div className="hidden sm:block">
-          <Link href="/teams/new">
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Nuova Squadra
-            </Button>
-          </Link>
-        </div>
-      </div>
+      {/* Header with Limit Info */}
+      <Suspense fallback={<TeamsHeaderSkeleton />}>
+        <TeamsHeader />
+      </Suspense>
 
       {/* Teams Grid */}
       <Suspense fallback={<TeamsGridSkeleton />}>
         <TeamsGrid />
       </Suspense>
-
-      {/* Mobile floating button */}
-      <div className="sm:hidden fixed bottom-20 right-4 z-40">
-        <Link href="/teams/new">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </Link>
-      </div>
     </div>
   );
 }

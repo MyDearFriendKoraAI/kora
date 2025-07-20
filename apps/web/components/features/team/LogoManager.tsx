@@ -11,7 +11,7 @@ interface LogoManagerProps {
 
 export function LogoManager({ team, onUpdate }: LogoManagerProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(team.logo);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(team.logo || null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,15 +43,15 @@ export function LogoManager({ team, onUpdate }: LogoManagerProps) {
       
       if (result.success) {
         onUpdate({ logo: result.url });
-        setPreviewUrl(result.url);
+        setPreviewUrl(result.url || null);
       } else {
         alert(result.error || 'Errore durante l\'upload');
-        setPreviewUrl(team.logo);
+        setPreviewUrl(team.logo || null);
       }
     } catch (error) {
       console.error('Upload error:', error);
       alert('Errore durante l\'upload del logo');
-      setPreviewUrl(team.logo);
+      setPreviewUrl(team.logo || null);
     } finally {
       setIsUploading(false);
       URL.revokeObjectURL(preview);
@@ -82,7 +82,7 @@ export function LogoManager({ team, onUpdate }: LogoManagerProps) {
     setIsUploading(true);
     try {
       // In a real implementation, you'd call a delete action
-      onUpdate({ logo: null });
+      onUpdate({ logo: undefined });
       setPreviewUrl(null);
     } finally {
       setIsUploading(false);

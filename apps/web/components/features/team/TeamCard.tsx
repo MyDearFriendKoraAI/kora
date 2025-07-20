@@ -10,6 +10,7 @@ interface TeamCardProps {
   logo?: string;
   colors?: TeamColors;
   playerCount: number;
+  role?: 'owner' | 'assistant'; // Future preparation for assistant coach role
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function TeamCard({
   logo,
   colors,
   playerCount,
+  role = 'owner', // Default to owner for now
   className = '',
 }: TeamCardProps) {
   // Iniziali del nome squadra per fallback logo
@@ -67,7 +69,19 @@ export function TeamCard({
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">{name}</h3>
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">{name}</h3>
+              {role === 'owner' && (
+                <span className="inline-flex px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                  Mister
+                </span>
+              )}
+              {role === 'assistant' && (
+                <span className="inline-flex px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                  Vice Allenatore
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500">{SPORT_LABELS[sport]}</p>
           </div>
         </div>

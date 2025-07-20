@@ -21,10 +21,14 @@ export function VenueManager({ team, onUpdate }: VenueManagerProps) {
   const [isAddingVenue, setIsAddingVenue] = useState(false);
   const [editingVenue, setEditingVenue] = useState<string | null>(null);
 
-  const [newVenue, setNewVenue] = useState({
+  const [newVenue, setNewVenue] = useState<{
+    name: string;
+    address: string;
+    type: 'primary' | 'secondary';
+  }>({
     name: '',
     address: '',
-    type: 'secondary' as const
+    type: 'secondary'
   });
 
   const handleAddVenue = () => {

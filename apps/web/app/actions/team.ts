@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createTeam, updateTeam, deleteTeam, updateTeamColors, updateTeamLogo } from '@/lib/supabase/team';
+import { createTeam, updateTeam, deleteTeam, updateTeamColors, updateTeamLogo, getTeamCountByUserId } from '@/lib/supabase/team';
 import { ensureUserExists } from '@/lib/supabase/user';
 import { 
   createTeamSchema, 
@@ -28,6 +28,12 @@ export async function createTeamAction(data: CreateTeamFormData) {
     const userResult = await ensureUserExists(user.id);
     if (userResult.error) {
       return { error: userResult.error };
+    }
+
+    // Check team limit before validation
+    const currentTeamCount = await getTeamCountByUserId(user.id);
+    if (currentTeamCount >= 2) {
+      return { error: 'Limite squadre raggiunto. Puoi creare massimo 2 squadre per account.' };
     }
 
     // Validate data
@@ -161,7 +167,7 @@ export async function uploadTeamLogoAction(teamId: string, formData: FormData) {
     };
     
     if (!result.success) {
-      return { error: result.error || 'Errore durante l\'upload del logo' };
+      return { error: 'Errore durante l\'upload del logo' };
     }
     
     // Revalidate team pages
@@ -206,5 +212,29 @@ export async function updateTeamColorsAction(teamId: string, colors: TeamColors)
   } catch (error: any) {
     console.error('Update team colors error:', error);
     return { error: error.message || 'Errore durante l\'aggiornamento dei colori' };
+  }
+}
+
+export async function getUserTeamCountAction() {
+  try {
+    // Get authenticated user
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato', count: 0 };
+    }
+
+    // Get team count
+    const count = await getTeamCountByUserId(user.id);
+    
+    return { 
+      success: true,
+      count,
+      maxCount: 2
+    };
+  } catch (error: any) {
+    console.error('Get team count error:', error);
+    return { error: error.message || 'Errore durante il recupero del conteggio squadre', count: 0 };
   }
 }

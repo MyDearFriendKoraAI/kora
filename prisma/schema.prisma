@@ -8,39 +8,43 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  nome          String
-  cognome       String
-  phone         String?
-  bio           String?
-  avatarUrl     String?
-  tier          UserTier       @default(FREE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  conversations Conversation[]
-  subscription  Subscription?
-  teams         Team[]
+  id                String          @id @default(cuid())
+  email             String          @unique
+  nome              String
+  cognome           String
+  phone             String?
+  bio               String?
+  avatarUrl         String?
+  tier              UserTier        @default(FREE)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  conversations     Conversation[]
+  subscription      Subscription?
+  teams             Team[]
+  assistantTeams    TeamAssistant[]
+  sentInvites       TeamInvite[]    @relation("InviterUser")
 
   @@map("users")
 }
 
 model Team {
-  id        String     @id @default(cuid())
-  sport     SportType
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  category  String?
-  coachId   String
-  colors    Json?
-  homeField String?
-  isDeleted Boolean    @default(false)
-  logo      String?
-  name      String
-  season    String     @default("2024/2025")
-  players   Player[]
-  coach     User       @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  trainings Training[]
+  id           String          @id @default(cuid())
+  sport        SportType
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  category     String?
+  coachId      String
+  colors       Json?
+  homeField    String?
+  isDeleted    Boolean         @default(false)
+  logo         String?
+  name         String
+  season       String          @default("2024/2025")
+  players      Player[]
+  coach        User            @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  trainings    Training[]
+  assistants   TeamAssistant[]
+  invites      TeamInvite[]
 
   @@map("teams")
 }
@@ -128,6 +132,40 @@ model Subscription {
   @@map("subscriptions")
 }
 
+model TeamAssistant {
+  id          String   @id @default(cuid())
+  teamId      String
+  userId      String
+  joinedAt    DateTime @default(now())
+  permissions Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_assistants")
+}
+
+model TeamInvite {
+  id        String           @id @default(cuid())
+  email     String
+  teamId    String
+  inviterId String
+  role      TeamInviteRole   @default(ASSISTANT)
+  status    TeamInviteStatus @default(PENDING)
+  token     String           @unique
+  message   String?
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  inviter   User             @relation("InviterUser", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@unique([email, teamId])
+  @@map("team_invites")
+}
+
 enum UserTier {
   FREE
   LEVEL1
@@ -141,4 +179,15 @@ enum SportType {
   TENNIS
   RUGBY
   ALTRO
+}
+
+enum TeamInviteRole {
+  ASSISTANT
+}
+
+enum TeamInviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }

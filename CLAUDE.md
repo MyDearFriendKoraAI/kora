@@ -173,3 +173,45 @@ pnpm type-check   # TypeScript check
 - Componenti riutilizzabili cross-platform
 - Performance PWA per web
 - SEO optimization per landing pages
+
+## Troubleshooting Database (Prisma + Supabase)
+
+### Problema: "The table `public.table_name` does not exist"
+Questo errore indica che le tabelle non sono state sincronizzate nel database Supabase.
+
+**Soluzione:**
+1. Usa la connessione diretta (porta 5432) invece di pgbouncer (porta 6543)
+2. Esegui il push con il flag `--accept-data-loss`
+
+```bash
+# Comando corretto per push database
+DATABASE_URL="postgres://postgres.xxxxx:password@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" npx prisma db push --accept-data-loss
+```
+
+### Problema: "Cannot read properties of undefined (reading 'findFirst')"
+Questo errore indica che il client Prisma non è aggiornato con i nuovi modelli.
+
+**Soluzione:**
+1. Rigenera il client Prisma dopo modifiche allo schema
+2. Riavvia il server di sviluppo
+
+```bash
+# Rigenera client Prisma
+npx prisma generate
+
+# Riavvia development server
+pnpm dev
+```
+
+### Workflow Completo per Modifiche Schema
+```bash
+# 1. Modifica prisma/schema.prisma
+# 2. Rigenera client
+npx prisma generate
+
+# 3. Push al database (usa connessione diretta)
+DATABASE_URL="postgres://postgres.xxxxx:password@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" npx prisma db push --accept-data-loss
+
+# 4. Riavvia dev server
+pnpm dev
+```

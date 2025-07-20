@@ -1,5 +1,7 @@
 import { SportTypeEnum, CreateTeamFormData, UpdateTeamFormData, TeamColors } from '@/lib/validations/team';
 import { prisma } from '@/lib/prisma';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
+import { getTeamAssistantCount } from './team-assistant';
 
 export interface Team {
   id: string;
@@ -46,11 +48,11 @@ export async function getTeamsByUserId(userId: string): Promise<Team[]> {
       id: team.id,
       name: team.name,
       sport: team.sport as SportTypeEnum,
-      category: team.category,
+      category: team.category || undefined,
       season: team.season,
-      homeField: team.homeField,
+      homeField: team.homeField || undefined,
       colors: team.colors as { primary: string; secondary: string } | undefined,
-      logo: team.logo,
+      logo: team.logo || undefined,
       coachId: team.coachId,
       isDeleted: team.isDeleted,
       createdAt: team.createdAt.toISOString(),
@@ -62,6 +64,22 @@ export async function getTeamsByUserId(userId: string): Promise<Team[]> {
   } catch (error) {
     console.error('Error fetching teams:', error);
     return [];
+  }
+}
+
+// Get team count for a user (for limit validation)
+export async function getTeamCountByUserId(userId: string): Promise<number> {
+  try {
+    const count = await prisma.team.count({
+      where: {
+        coachId: userId,
+        isDeleted: false,
+      },
+    });
+    return count;
+  } catch (error) {
+    console.error('Error counting teams:', error);
+    return 0;
   }
 }
 
@@ -89,11 +107,11 @@ export async function getTeamById(teamId: string, userId: string): Promise<Team 
       id: team.id,
       name: team.name,
       sport: team.sport as SportTypeEnum,
-      category: team.category,
+      category: team.category || undefined,
       season: team.season,
-      homeField: team.homeField,
+      homeField: team.homeField || undefined,
       colors: team.colors as { primary: string; secondary: string } | undefined,
-      logo: team.logo,
+      logo: team.logo || undefined,
       coachId: team.coachId,
       isDeleted: team.isDeleted,
       createdAt: team.createdAt.toISOString(),
@@ -111,6 +129,15 @@ export async function getTeamById(teamId: string, userId: string): Promise<Team 
 // Create new team (server-side)
 export async function createTeam(data: CreateTeamFormData, userId: string): Promise<{ success: boolean; teamId?: string; error?: string }> {
   try {
+    // Check team limit (maximum 2 teams per user)
+    const currentTeamCount = await getTeamCountByUserId(userId);
+    if (currentTeamCount >= 2) {
+      return {
+        success: false,
+        error: 'Limite squadre raggiunto. Puoi creare massimo 2 squadre per account.',
+      };
+    }
+
     const team = await prisma.team.create({
       data: {
         name: data.name,
@@ -303,11 +330,15 @@ export async function getTeamStats(teamId: string, userId: string) {
         data: 'desc',
       },
     });
+
+    // Get assistants count
+    const assistantsCount = await getTeamAssistantCount(teamId);
     
     return {
       playersCount: team._count.players,
       trainingsCount: team._count.trainings,
       upcomingTrainings: team.trainings.length,
+      assistantsCount,
       lastTraining: lastTraining?.data.toISOString(),
       nextTraining: team.trainings[0]?.data.toISOString(),
     };
@@ -325,7 +356,7 @@ export async function updateTeamColors(teamId: string, colors: TeamColors, userI
         coachId: userId,
       },
       data: {
-        colors: colors,
+        colors: colors as any, // Prisma JsonValue type
       },
     });
 
