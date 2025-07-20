@@ -2,91 +2,33 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 export default function TrainingsPage() {
-  const trainings = [
-    {
-      id: "1",
-      titolo: "Allenamento Tattico",
-      data: "2024-01-15",
-      ora: "18:00",
-      squadra: "Squadra A",
-      durata: "90 min",
-      partecipanti: 18,
-    },
-    {
-      id: "2",
-      titolo: "Preparazione Fisica",
-      data: "2024-01-16",
-      ora: "17:30",
-      squadra: "Under 18",
-      durata: "75 min",
-      partecipanti: 14,
-    },
-    {
-      id: "3",
-      titolo: "Tecnica Individuale",
-      data: "2024-01-17",
-      ora: "19:00",
-      squadra: "Femminile",
-      durata: "60 min",
-      partecipanti: 12,
-    },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 pb-safe">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Allenamenti</h1>
           <p className="text-gray-600">Programma e gestisci gli allenamenti</p>
         </div>
-        <Button>Nuovo Allenamento</Button>
+        <Button className="w-full sm:w-auto">Nuovo Allenamento</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          {trainings.map((training) => (
-            <Card key={training.id}>
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>{training.titolo}</span>
-                  <span className="text-sm font-normal text-gray-500">
-                    {training.squadra}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Data</p>
-                    <p className="font-medium">{training.data}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Ora</p>
-                    <p className="font-medium">{training.ora}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Durata</p>
-                    <p className="font-medium">{training.durata}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Partecipanti</p>
-                    <p className="font-medium">{training.partecipanti}</p>
-                  </div>
+        <div className="lg:col-span-2">
+          {/* Empty state */}
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </div>
-                <div className="mt-4 flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    Modifica
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Presenze
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Dettagli
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nessun allenamento</h3>
+                <p className="text-gray-500 mb-4">Programma il tuo primo allenamento per iniziare</p>
+                <Button>Crea Allenamento</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-4">
@@ -97,15 +39,15 @@ export default function TrainingsPage() {
             <CardContent className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm">Allenamenti totali:</span>
-                <span className="font-medium">12</span>
+                <span className="font-medium">0</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Presenza media:</span>
-                <span className="font-medium">87%</span>
+                <span className="font-medium">-</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Ore totali:</span>
-                <span className="font-medium">18h</span>
+                <span className="font-medium">0h</span>
               </div>
             </CardContent>
           </Card>
@@ -115,19 +57,13 @@ export default function TrainingsPage() {
               <CardTitle>Prossimi Allenamenti</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="border-l-4 border-blue-500 pl-3">
-                  <p className="text-sm font-medium">Oggi, 18:00</p>
-                  <p className="text-xs text-gray-500">Squadra A - Tattico</p>
+              <div className="text-center py-6">
+                <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                 </div>
-                <div className="border-l-4 border-green-500 pl-3">
-                  <p className="text-sm font-medium">Domani, 17:30</p>
-                  <p className="text-xs text-gray-500">Under 18 - Fisico</p>
-                </div>
-                <div className="border-l-4 border-purple-500 pl-3">
-                  <p className="text-sm font-medium">Mercoledì, 19:00</p>
-                  <p className="text-xs text-gray-500">Femminile - Tecnica</p>
-                </div>
+                <p className="text-sm text-gray-500">Nessun allenamento programmato</p>
               </div>
             </CardContent>
           </Card>

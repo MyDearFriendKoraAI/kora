@@ -1,11 +1,131 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../apps/web/node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  nome          String
+  cognome       String
+  phone         String?
+  bio           String?
+  avatarUrl     String?
+  tier          UserTier       @default(FREE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+  subscription  Subscription?
+  teams         Team[]
+
+  @@map("users")
+}
+
+model Team {
+  id        String     @id @default(cuid())
+  sport     SportType
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  category  String?
+  coachId   String
+  colors    Json?
+  homeField String?
+  isDeleted Boolean    @default(false)
+  logo      String?
+  name      String
+  season    String     @default("2024/2025")
+  players   Player[]
+  coach     User       @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  trainings Training[]
+
+  @@map("teams")
+}
+
+model Player {
+  id           String       @id @default(cuid())
+  nome         String
+  cognome      String
+  dataNascita  DateTime
+  ruolo        String?
+  numeroMaglia Int?
+  teamId       String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  attendances  Attendance[]
+  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, numeroMaglia])
+  @@map("players")
+}
+
+model Training {
+  id          String       @id @default(cuid())
+  titolo      String
+  descrizione String?
+  data        DateTime
+  durata      Int
+  teamId      String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[]
+  team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("trainings")
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  presente   Boolean  @default(false)
+  note       String?
+  playerId   String
+  trainingId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, trainingId])
+  @@map("attendances")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  titolo    String?
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  role           String
+  conversationId String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  stripeCustomerId       String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 enum UserTier {
@@ -15,142 +135,10 @@ enum UserTier {
 }
 
 enum SportType {
-  calcio
-  basket
-  volley
-  tennis
-  rugby
-  altro
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  nome      String
-  cognome   String
-  phone     String?
-  bio       String?
-  avatarUrl String?
-  tier      UserTier @default(FREE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  teams         Team[]
-  conversations Conversation[]
-  subscription  Subscription?
-
-  @@map("users")
-}
-
-model Team {
-  id          String    @id @default(cuid())
-  nome        String
-  sport       SportType
-  descrizione String?
-  ownerId     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  owner     User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  players   Player[]
-  trainings Training[]
-
-  @@map("teams")
-}
-
-model Player {
-  id           String    @id @default(cuid())
-  nome         String
-  cognome      String
-  dataNascita  DateTime
-  ruolo        String?
-  numeroMaglia Int?
-  teamId       String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Relations
-  team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  attendances Attendance[]
-
-  @@unique([teamId, numeroMaglia])
-  @@map("players")
-}
-
-model Training {
-  id          String   @id @default(cuid())
-  titolo      String
-  descrizione String?
-  data        DateTime
-  durata      Int // durata in minuti
-  teamId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  attendances Attendance[]
-
-  @@map("trainings")
-}
-
-model Attendance {
-  id         String  @id @default(cuid())
-  presente   Boolean @default(false)
-  note       String?
-  playerId   String
-  trainingId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  player   Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  training Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
-
-  @@unique([playerId, trainingId])
-  @@map("attendances")
-}
-
-model Conversation {
-  id        String   @id @default(cuid())
-  titolo    String?
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
-
-  @@map("conversations")
-}
-
-model Message {
-  id             String   @id @default(cuid())
-  content        String
-  role           String // "user" | "assistant"
-  conversationId String
-  createdAt      DateTime @default(now())
-
-  // Relations
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@map("messages")
-}
-
-model Subscription {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  stripeCustomerId  String?   @unique
-  stripePriceId     String?
-  stripeCurrentPeriodEnd DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("subscriptions")
+  CALCIO
+  BASKET
+  PALLAVOLO
+  TENNIS
+  RUGBY
+  ALTRO
 }
