@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Team } from '@/lib/supabase/team';
 import { TeamColors } from '@/lib/validations/team';
-import { updateTeamColorsAction } from '@/app/actions/team-settings';
+import { updateTeamColorsAction } from '@/app/actions/team';
 import { ColorPicker } from './ColorPicker';
 
 interface ColorThemeManagerProps {
@@ -17,25 +17,19 @@ const SPORT_PRESETS = {
     { name: 'Nerazzurro', primary: '#0047AB', secondary: '#000000' },
     { name: 'Rossonero', primary: '#AC0000', secondary: '#000000' },
     { name: 'Bianconero', primary: '#FFFFFF', secondary: '#000000' },
-    { name: 'Giallorosso', primary: '#FFD700', secondary: '#DC143C' },
-    { name: 'Azzurro', primary: '#0087BD', secondary: '#FFFFFF' },
   ],
   BASKET: [
-    { name: 'Lakers', primary: '#552583', secondary: '#FDB927' },
-    { name: 'Bulls', primary: '#CE1141', secondary: '#000000' },
-    { name: 'Warriors', primary: '#1D428A', secondary: '#FFC72C' },
-    { name: 'Celtics', primary: '#007A33', secondary: '#FFFFFF' },
+    { name: 'Blu Royal', primary: '#1D428A', secondary: '#FFC72C' },
+    { name: 'Rosso Fuoco', primary: '#CE1141', secondary: '#000000' },
   ],
   PALLAVOLO: [
     { name: 'Blu Royal', primary: '#4169E1', secondary: '#FFFFFF' },
-    { name: 'Rosso Fuoco', primary: '#FF4500', secondary: '#FFFFFF' },
-    { name: 'Verde Smeraldo', primary: '#50C878', secondary: '#FFFFFF' },
+    { name: 'Rosso Energia', primary: '#FF4500', secondary: '#FFFFFF' },
   ],
   DEFAULT: [
-    { name: 'Blu Classico', primary: '#2563EB', secondary: '#FFFFFF' },
-    { name: 'Rosso Energia', primary: '#DC2626', secondary: '#FFFFFF' },
-    { name: 'Verde Natura', primary: '#16A34A', secondary: '#FFFFFF' },
-    { name: 'Viola Elegante', primary: '#7C3AED', secondary: '#FFFFFF' },
+    { name: 'Blu', primary: '#2563EB', secondary: '#FFFFFF' },
+    { name: 'Rosso', primary: '#DC2626', secondary: '#FFFFFF' },
+    { name: 'Verde', primary: '#16A34A', secondary: '#FFFFFF' },
   ]
 };
 

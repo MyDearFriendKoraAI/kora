@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Team } from '@/lib/supabase/team';
-import { uploadTeamLogoAction } from '@/app/actions/team-settings';
+import { uploadTeamLogoAction } from '@/app/actions/team';
 
 interface LogoManagerProps {
   team: Team;

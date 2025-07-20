@@ -28,9 +28,9 @@ interface TeamPreferencesProps {
 export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
   const [preferences, setPreferences] = useState<Preferences>({
     notifications: {
-      email: true,
-      training: true,
-      matches: true,
+      email: false,
+      training: false,
+      matches: false,
       general: false
     },
     dateFormat: 'DD/MM/YYYY',
@@ -39,7 +39,7 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
     privacy: {
       publicTeam: false,
       allowSearching: false,
-      showStatistics: true
+      showStatistics: false
     }
   });
 

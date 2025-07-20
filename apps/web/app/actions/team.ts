@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createTeam, updateTeam, deleteTeam } from '@/lib/supabase/team';
+import { createTeam, updateTeam, deleteTeam, updateTeamColors, updateTeamLogo } from '@/lib/supabase/team';
 import { ensureUserExists } from '@/lib/supabase/user';
 import { 
   createTeamSchema, 
@@ -10,7 +10,8 @@ import {
   deleteTeamSchema,
   CreateTeamFormData,
   UpdateTeamFormData,
-  DeleteTeamFormData 
+  DeleteTeamFormData,
+  TeamColors
 } from '@/lib/validations/team';
 
 export async function createTeamAction(data: CreateTeamFormData) {
@@ -175,5 +176,35 @@ export async function uploadTeamLogoAction(teamId: string, formData: FormData) {
   } catch (error: any) {
     console.error('Upload logo error:', error);
     return { error: error.message || 'Errore durante l\'upload del logo' };
+  }
+}
+
+export async function updateTeamColorsAction(teamId: string, colors: TeamColors) {
+  try {
+    // Get authenticated user
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    // Update team colors
+    const result = await updateTeamColors(teamId, colors, user.id);
+    
+    if (result.error) {
+      return { error: result.error };
+    }
+    
+    // Revalidate team pages
+    revalidatePath(`/teams/${teamId}`);
+    
+    return { 
+      success: true,
+      message: 'Colori aggiornati con successo!'
+    };
+  } catch (error: any) {
+    console.error('Update team colors error:', error);
+    return { error: error.message || 'Errore durante l\'aggiornamento dei colori' };
   }
 }
