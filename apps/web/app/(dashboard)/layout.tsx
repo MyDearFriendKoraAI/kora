@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserMenu } from "@/components/features/auth/UserMenu";
 
 export default function DashboardLayout({
   children,
@@ -21,8 +22,9 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-50">
       {/* Mobile menu button */}
       <div className="lg:hidden">
-        <div className="bg-white shadow-sm border-b px-4 py-3">
+        <div className="bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Kora</h1>
+          <UserMenu />
         </div>
       </div>
 
@@ -30,7 +32,7 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
           <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
+            <div className="flex items-center justify-between flex-shrink-0 px-4">
               <h1 className="text-2xl font-bold text-gray-900">Kora</h1>
             </div>
             <div className="mt-5 flex-grow flex flex-col">
@@ -52,6 +54,9 @@ export default function DashboardLayout({
                   );
                 })}
               </nav>
+              <div className="px-2 mt-4">
+                <UserMenu />
+              </div>
             </div>
           </div>
         </div>
