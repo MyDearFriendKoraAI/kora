@@ -21,13 +21,13 @@
   - [x] Delete team (with confirmation)
   - [ ] Team switcher (max 2 teams)
   - [ ] Limite 2 squadre per account enforced
-- [ ] **Vice Allenatore System**
-  - [ ] Invito via email con Resend
-  - [ ] Pagina accettazione/rifiuto invito
-  - [ ] Gestione permessi owner/assistant
-  - [ ] Lista vice allenatori
-  - [ ] Rimozione vice allenatori
-  - [ ] Limiti per tier (1/2/unlimited)
+- [x] **Vice Allenatore System**
+  - [x] Invito via email con Resend
+  - [x] Pagina accettazione/rifiuto invito
+  - [x] Gestione permessi owner/assistant
+  - [x] Lista vice allenatori
+  - [x] Rimozione vice allenatori
+  - [x] Limiti per tier (1/2/unlimited)
 - [x] **Team Settings**
   - [x] Colors and logo upload
   - [x] Home field management
