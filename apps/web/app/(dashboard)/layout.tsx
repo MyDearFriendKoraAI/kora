@@ -31,7 +31,7 @@ export default function DashboardLayout({
       <div className="lg:flex">
         {/* Sidebar */}
         <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-          <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto">
+          <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto relative">
             <div className="flex items-center justify-between flex-shrink-0 px-4">
               <h1 className="text-2xl font-bold text-gray-900">Kora</h1>
             </div>
@@ -55,7 +55,7 @@ export default function DashboardLayout({
                 })}
               </nav>
               <div className="px-2 mt-4">
-                <UserMenu />
+                <UserMenu variant="sidebar" />
               </div>
             </div>
           </div>
