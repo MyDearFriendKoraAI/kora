@@ -1,0 +1,42 @@
+{
+  "name": "@kora/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "db:generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "db:push": "prisma db push --schema=../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=../../prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@kora/shared": "workspace:*",
+    "@prisma/client": "^5.4.0",
+    "@supabase/ssr": "^0.0.10",
+    "@supabase/supabase-js": "^2.38.0",
+    "next": "14.0.0",
+    "next-pwa": "^5.6.0",
+    "openai": "^4.12.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.47.0",
+    "zod": "^3.22.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@kora/config": "workspace:*",
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.45.0",
+    "eslint-config-next": "14.0.0",
+    "postcss": "^8.4.0",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.1.0"
+  }
+}
