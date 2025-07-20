@@ -20,12 +20,12 @@ export function FormSteps({ steps, currentStep, children, className = '' }: Form
     <div className={`max-w-2xl mx-auto ${className}`}>
       {/* Progress indicator */}
       <div className="mb-8">
-        <div className="flex items-center">
+        <div className="flex items-center justify-center">
           {steps.map((step, index) => (
             <div key={step.id} className="flex items-center">
               {/* Step circle */}
               <div className={`
-                flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium
+                flex items-center justify-center w-10 h-10 rounded-full border-2 text-sm font-medium
                 ${index + 1 < currentStep
                   ? 'bg-blue-600 border-blue-600 text-white' // Completed
                   : index + 1 === currentStep
@@ -57,7 +57,7 @@ export function FormSteps({ steps, currentStep, children, className = '' }: Form
               {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className={`
-                  w-12 h-0.5 mx-4
+                  w-16 h-0.5 mx-4
                   ${index + 1 < currentStep ? 'bg-blue-600' : 'bg-gray-300'}
                 `} />
               )}

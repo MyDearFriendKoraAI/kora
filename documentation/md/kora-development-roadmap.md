@@ -13,8 +13,8 @@
   - [x] User profile setup
 
 ### 📋 **Sprint 2: Team Management** (Settimana 2)
-- [ ] **Team CRUD**
-  - [ ] Create team flow (sport, category, season)
+- [x] **Team CRUD**
+  - [x] Create team flow (sport, category, season)
   - [ ] Team dashboard
   - [ ] Edit team details
   - [ ] Delete team (with confirmation)
