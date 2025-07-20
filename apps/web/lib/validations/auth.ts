@@ -55,6 +55,38 @@ export const forgotPasswordSchema = z.object({
     .email('Inserisci un\'email valida'),
 });
 
+// Schema per reset password
+export const resetPasswordSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Le password non corrispondono',
+  path: ['confirmPassword'],
+});
+
+// Schema per aggiornamento profilo
+export const updateProfileSchema = z.object({
+  nome: z
+    .string()
+    .min(2, 'Il nome deve contenere almeno 2 caratteri')
+    .max(50, 'Il nome non può superare i 50 caratteri'),
+  cognome: z
+    .string()
+    .min(2, 'Il cognome deve contenere almeno 2 caratteri')
+    .max(50, 'Il cognome non può superare i 50 caratteri'),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[\+]?[0-9\s\-\(\)]{6,20}$/.test(val), {
+      message: 'Numero di telefono non valido',
+    }),
+  bio: z
+    .string()
+    .max(500, 'La biografia non può superare i 500 caratteri')
+    .optional(),
+  avatarUrl: z.string().optional(),
+});
+
 // Tipi TypeScript 
 export type LoginFormData = {
   email: string;
@@ -63,3 +95,5 @@ export type LoginFormData = {
 };
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;

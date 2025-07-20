@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { signIn, signUp, signOut, resetPassword } from '@/lib/supabase/auth';
+import { signIn, signUp, signOut, resetPassword, updatePassword } from '@/lib/supabase/auth';
 
 export async function loginAction(data: { email: string; password: string }) {
   try {
@@ -65,6 +65,24 @@ export async function forgotPasswordAction(data: { email: string }) {
       success: true, 
       message: 'Email di recupero password inviata! Controlla la tua casella di posta.' 
     };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function updatePasswordAction(data: { password: string }) {
+  try {
+    const result = await updatePassword(data.password);
+    
+    if (result.user) {
+      revalidatePath('/', 'layout');
+      return { 
+        success: true, 
+        message: 'Password aggiornata con successo!' 
+      };
+    }
+    
+    throw new Error('Aggiornamento password fallito');
   } catch (error: any) {
     return { error: error.message };
   }

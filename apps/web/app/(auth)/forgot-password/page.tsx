@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
               <span className="font-medium">{getValues('email')}</span>
             </p>
             <p className="text-sm text-gray-500">
-              Il link sarà valido per 24 ore. Controlla anche la cartella spam.
+              Il link sarà valido per 24 ore. Controlla anche la cartella spam se non lo ricevi entro pochi minuti.
             </p>
           </div>
 

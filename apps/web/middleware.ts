@@ -70,10 +70,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages (except reset-password)
   if ((request.nextUrl.pathname === '/login' || 
        request.nextUrl.pathname === '/register') && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+  
+  // Allow reset-password page for both authenticated and unauthenticated users
+  if (request.nextUrl.pathname === '/reset-password') {
+    return response;
   }
 
   return response;

@@ -14,6 +14,9 @@ const AUTH_ERRORS = {
   TOO_MANY_REQUESTS: 'Troppi tentativi. Riprova tra qualche minuto',
   NETWORK_ERROR: 'Errore di connessione. Controlla la tua connessione internet',
   GENERIC_ERROR: 'Si è verificato un errore imprevisto. Riprova più tardi',
+  TOKEN_EXPIRED: 'Link scaduto, richiedi un nuovo reset password',
+  TOKEN_INVALID: 'Link non valido o già utilizzato',
+  SAME_PASSWORD: 'La nuova password deve essere diversa da quella attuale',
 };
 
 export async function signUp(email: string, password: string, firstName: string, lastName: string) {
@@ -141,5 +144,35 @@ export async function getSession() {
     return session;
   } catch (error) {
     return null;
+  }
+}
+
+export async function updatePassword(newPassword: string) {
+  const supabase = createClient();
+  
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      if (error.message.includes('Password should be at least')) {
+        throw new Error(AUTH_ERRORS.WEAK_PASSWORD);
+      }
+      if (error.message.includes('New password should be different')) {
+        throw new Error(AUTH_ERRORS.SAME_PASSWORD);
+      }
+      if (error.message.includes('Token has expired') || error.message.includes('expired')) {
+        throw new Error(AUTH_ERRORS.TOKEN_EXPIRED);
+      }
+      if (error.message.includes('Invalid token') || error.message.includes('invalid')) {
+        throw new Error(AUTH_ERRORS.TOKEN_INVALID);
+      }
+      throw new Error(error.message);
+    }
+
+    return { user: data.user };
+  } catch (error: any) {
+    throw new Error(error.message || AUTH_ERRORS.GENERIC_ERROR);
   }
 }

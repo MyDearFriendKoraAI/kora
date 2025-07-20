@@ -50,14 +50,24 @@ export function UserMenu({ className = '' }: UserMenuProps) {
         .toUpperCase()
     : user.email?.charAt(0).toUpperCase() || 'U';
 
+  const avatarUrl = user.user_metadata?.avatar_url;
+
   return (
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
       >
-        <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-          {userInitials}
+        <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            userInitials
+          )}
         </div>
         <div className="hidden sm:block text-left">
           <p className="text-sm font-medium text-gray-900">
@@ -100,7 +110,7 @@ export function UserMenu({ className = '' }: UserMenuProps) {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  router.push('/dashboard/profile');
+                  router.push('/profile');
                 }}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
