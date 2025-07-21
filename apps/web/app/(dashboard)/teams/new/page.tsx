@@ -19,7 +19,8 @@ import {
   SPORT_DEFAULT_COLORS,
   SportTypeEnum 
 } from '@/lib/validations/team';
-import { createTeamAction, getUserTeamCountAction } from '@/app/actions/team';
+import { createTeamAction, getUserTeamsAction } from '@/app/actions/team';
+import { useTeamStore } from '@/stores/team-store';
 
 const STEPS = [
   { id: 1, title: 'Sport', description: 'Scegli lo sport' },
@@ -30,9 +31,8 @@ const STEPS = [
 export default function NewTeamPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [teamCount, setTeamCount] = useState<{ count: number; maxCount: number } | null>(null);
-  const [isLoadingCount, setIsLoadingCount] = useState(true);
   const router = useRouter();
+  const { userTeams, setUserTeams } = useTeamStore();
 
   const {
     register,
@@ -55,23 +55,10 @@ export default function NewTeamPage() {
   const watchedSport = watch('sport');
   const watchedColors = watch('colors');
 
-  // Fetch user team count on mount
-  useEffect(() => {
-    async function fetchTeamCount() {
-      try {
-        const result = await getUserTeamCountAction();
-        if (result.success) {
-          setTeamCount({ count: result.count, maxCount: result.maxCount });
-        }
-      } catch (error) {
-        console.error('Error fetching team count:', error);
-      } finally {
-        setIsLoadingCount(false);
-      }
-    }
-
-    fetchTeamCount();
-  }, []);
+  // Check team limit
+  const teamCount = userTeams.length;
+  const maxCount = 2;
+  const isAtLimit = teamCount >= maxCount;
 
   // Update default colors when sport changes
   const handleSportSelect = (sport: SportTypeEnum) => {
@@ -116,6 +103,12 @@ export default function NewTeamPage() {
       }
 
       if (result?.success && result.teamId) {
+        // Refresh teams data in store
+        const teamsResult = await getUserTeamsAction();
+        if (teamsResult.success && teamsResult.teams) {
+          setUserTeams(teamsResult.teams);
+        }
+        
         toast.success('Squadra creata con successo!');
         router.push(`/teams/${result.teamId}`);
       }
@@ -139,19 +132,6 @@ export default function NewTeamPage() {
     }
   };
 
-  const isAtLimit = teamCount && teamCount.count >= teamCount.maxCount;
-  const isFormDisabled = isAtLimit || isLoadingCount;
-
-  if (isLoadingCount) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Caricamento...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -162,12 +142,12 @@ export default function NewTeamPage() {
           <p className="text-gray-600">Configura la tua squadra in 3 semplici passi</p>
         </div>
 
-        {/* Team Limit Banner */}
-        {teamCount && (
+        {/* Team Limit Banner - Solo se non al limite */}
+        {!isAtLimit && teamCount > 0 && (
           <LimitBanner
-            variant={isAtLimit ? 'error' : 'warning'}
-            currentCount={teamCount.count}
-            maxCount={teamCount.maxCount}
+            variant="warning"
+            currentCount={teamCount}
+            maxCount={maxCount}
             className="mb-8"
           />
         )}

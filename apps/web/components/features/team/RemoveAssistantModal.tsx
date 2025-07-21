@@ -7,34 +7,42 @@ import { removeAssistantAction } from '@/app/actions/team-assistant';
 
 interface RemoveAssistantModalProps {
   assistant: TeamAssistant;
-  teamName: string;
+  teamName?: string;
   onClose: () => void;
+  onConfirm?: () => void | Promise<void>;
 }
 
 export function RemoveAssistantModal({
   assistant,
   teamName,
   onClose,
+  onConfirm,
 }: RemoveAssistantModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRemove = async () => {
-    setIsLoading(true);
-    try {
-      const result = await removeAssistantAction(assistant.id, assistant.teamId);
+    if (onConfirm) {
+      // Use external confirm handler
+      await onConfirm();
+    } else {
+      // Use internal logic
+      setIsLoading(true);
+      try {
+        const result = await removeAssistantAction(assistant.id, assistant.teamId);
 
-      if (result.success) {
-        toast.success('Vice allenatore rimosso con successo');
-        onClose();
-        // Refresh the page to show updated list
-        window.location.reload();
-      } else {
-        toast.error(result.error || 'Errore durante la rimozione del vice allenatore');
+        if (result.success) {
+          toast.success('Vice allenatore rimosso con successo');
+          onClose();
+          // Refresh the page to show updated list
+          window.location.reload();
+        } else {
+          toast.error(result.error || 'Errore durante la rimozione del vice allenatore');
+        }
+      } catch (error) {
+        toast.error('Errore durante la rimozione del vice allenatore');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error('Errore durante la rimozione del vice allenatore');
-    } finally {
-      setIsLoading(false);
     }
   };
 

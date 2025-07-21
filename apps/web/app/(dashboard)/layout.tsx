@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/components/features/auth/UserMenu";
+import { TeamSwitcher } from "@/components/features/team/TeamSwitcher";
+import { useTeamData } from "@/hooks/useTeamData";
 
 export default function DashboardLayout({
   children,
@@ -10,6 +12,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  
+  // Load user teams data
+  useTeamData();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -23,7 +28,12 @@ export default function DashboardLayout({
       {/* Mobile menu button */}
       <div className="lg:hidden">
         <div className="bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Kora</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-xl font-bold text-gray-900">Kora</h1>
+            <div className="max-w-48">
+              <TeamSwitcher variant="mobile" />
+            </div>
+          </div>
           <UserMenu />
         </div>
       </div>
@@ -34,6 +44,11 @@ export default function DashboardLayout({
           <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-5 pb-4 overflow-y-auto relative">
             <div className="flex items-center justify-between flex-shrink-0 px-4">
               <h1 className="text-2xl font-bold text-gray-900">Kora</h1>
+            </div>
+            
+            {/* Team Switcher Desktop */}
+            <div className="mt-4 px-4">
+              <TeamSwitcher variant="desktop" />
             </div>
             <div className="mt-5 flex-grow flex flex-col">
               <nav className="flex-1 px-2 space-y-1">

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { createTeam, updateTeam, deleteTeam, updateTeamColors, updateTeamLogo, getTeamCountByUserId } from '@/lib/supabase/team';
+import { createTeam, updateTeam, deleteTeam, updateTeamColors, updateTeamLogo, getTeamCountByUserId, getTeamsByUserId } from '@/lib/supabase/team';
 import { ensureUserExists } from '@/lib/supabase/user';
 import { 
   createTeamSchema, 
@@ -236,5 +236,45 @@ export async function getUserTeamCountAction() {
   } catch (error: any) {
     console.error('Get team count error:', error);
     return { error: error.message || 'Errore durante il recupero del conteggio squadre', count: 0 };
+  }
+}
+
+/**
+ * Get all user teams (as owner and as assistant)
+ */
+export async function getUserTeamsAction() {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    // Ensure user exists in database
+    const userResult = await ensureUserExists(user.id);
+    if (userResult.error) {
+      return { error: userResult.error };
+    }
+
+    // Get teams where user is owner
+    const ownedTeams = await getTeamsByUserId(user.id);
+    
+    // TODO: Get teams where user is assistant (when vice allenatori is ready)
+    // const assistantTeams = await getTeamsWhereUserIsAssistant(user.id);
+    
+    // For now, just return owned teams
+    const allTeams = ownedTeams.map(team => ({
+      ...team,
+      userRole: 'owner' as const,
+    }));
+
+    return {
+      success: true,
+      teams: allTeams,
+    };
+  } catch (error: any) {
+    console.error('Get user teams error:', error);
+    return { error: error.message || 'Errore durante il recupero delle squadre' };
   }
 }

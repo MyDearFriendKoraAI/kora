@@ -1,24 +1,14 @@
-import { Suspense } from 'react';
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { TeamCard, TeamCardSkeleton } from '@/components/features/team/TeamCard';
 import { LimitBanner } from '@/components/features/team/LimitBanner';
-import { getTeamsByUserId, getTeamCountByUserId } from '@/lib/supabase/team';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { useTeamStore } from '@/stores/team-store';
+import { useTeamLimit } from '@/hooks/useTeamLimit';
 
-async function TeamsHeader() {
-  const supabase = createClient();
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    redirect('/login');
-  }
-
-  const teamCount = await getTeamCountByUserId(user.id);
-  const maxCount = 2;
-  const isAtLimit = teamCount >= maxCount;
+function TeamsHeader() {
+  const { used: teamCount, limit: maxCount, isAtLimit } = useTeamLimit();
 
   return (
     <>
@@ -55,14 +45,6 @@ async function TeamsHeader() {
         </div>
       </div>
 
-      {/* Limit Banner - Show only when at limit */}
-      {isAtLimit && (
-        <LimitBanner
-          variant="error"
-          currentCount={teamCount}
-          maxCount={maxCount}
-        />
-      )}
 
       {/* Mobile floating button */}
       <div className="sm:hidden fixed bottom-20 right-4 z-40">
@@ -89,16 +71,12 @@ async function TeamsHeader() {
   );
 }
 
-async function TeamsGrid() {
-  const supabase = createClient();
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    redirect('/login');
-  }
+function TeamsGrid() {
+  const { userTeams: teams, isLoading } = useTeamStore();
 
-  const teams = await getTeamsByUserId(user.id);
+  if (isLoading) {
+    return <TeamsGridSkeleton />;
+  }
 
   if (teams.length === 0) {
     return (
@@ -170,14 +148,10 @@ export default function TeamsPage() {
   return (
     <div className="space-y-6">
       {/* Header with Limit Info */}
-      <Suspense fallback={<TeamsHeaderSkeleton />}>
-        <TeamsHeader />
-      </Suspense>
+      <TeamsHeader />
 
       {/* Teams Grid */}
-      <Suspense fallback={<TeamsGridSkeleton />}>
-        <TeamsGrid />
-      </Suspense>
+      <TeamsGrid />
     </div>
   );
 }

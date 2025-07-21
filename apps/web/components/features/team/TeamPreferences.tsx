@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Team } from '@/lib/supabase/team';
+import { DeleteTeamModal } from './DeleteTeamModal';
+import { useTeamStore } from '@/stores/team-store';
+import { getUserTeamsAction } from '@/app/actions/team';
 
 interface Preferences {
   notifications: {
@@ -26,6 +30,7 @@ interface TeamPreferencesProps {
 }
 
 export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
+  const router = useRouter();
   const [preferences, setPreferences] = useState<Preferences>({
     notifications: {
       email: false,
@@ -44,6 +49,7 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleNotificationChange = (key: keyof Preferences['notifications']) => {
     setPreferences(prev => ({
@@ -74,6 +80,24 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const { setUserTeams } = useTeamStore();
+
+  const handleTeamDeleted = async () => {
+    setShowDeleteModal(false);
+    
+    // Refresh teams in store to remove deleted team immediately
+    try {
+      const result = await getUserTeamsAction();
+      if (result.success && result.teams) {
+        setUserTeams(result.teams);
+      }
+    } catch (error) {
+      console.error('Error refreshing teams:', error);
+    }
+    
+    router.push('/teams');
   };
 
   return (
@@ -229,6 +253,32 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
         </div>
       </div>
 
+      {/* Danger Zone */}
+      <div className="pt-8 border-t border-gray-200">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h4 className="text-lg font-medium text-red-900 mb-2">Zona di Pericolo</h4>
+          <p className="text-sm text-red-700 mb-4">
+            Queste azioni non possono essere annullate. Procedi con cautela.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h5 className="font-medium text-red-900">Elimina squadra</h5>
+              <p className="text-sm text-red-600">
+                Elimina definitivamente questa squadra e tutti i dati associati
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+            >
+              Elimina Squadra
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Save Button */}
       <div className="flex justify-end pt-6 border-t border-gray-200">
         <button
@@ -246,6 +296,16 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
           )}
         </button>
       </div>
+
+      {/* Delete Team Modal */}
+      {showDeleteModal && (
+        <DeleteTeamModal
+          team={team}
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={handleTeamDeleted}
+        />
+      )}
     </div>
   );
 }

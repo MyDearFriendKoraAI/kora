@@ -52,6 +52,20 @@ export function SportIcon({ sport, className = '', size = 'md' }: SportIconProps
   return icons[sport] || icons.ALTRO;
 }
 
+// Funzione helper per ottenere il label dello sport
+export function getSportLabel(sport: SportTypeEnum): string {
+  const labels = {
+    CALCIO: 'Calcio',
+    BASKET: 'Basket', 
+    PALLAVOLO: 'Pallavolo',
+    TENNIS: 'Tennis',
+    RUGBY: 'Rugby',
+    ALTRO: 'Altro',
+  };
+  
+  return labels[sport] || 'Sport';
+}
+
 // Componente per selezione sport con icone grandi
 interface SportSelectorProps {
   selectedSport?: SportTypeEnum;

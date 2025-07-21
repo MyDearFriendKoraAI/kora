@@ -2,13 +2,16 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { prisma } from '@/lib/prisma';
 import { 
   createTeamInvite, 
   acceptTeamInvite, 
   removeTeamAssistant,
   getTeamAssistantCount,
   getAssistantLimitByTier,
-  getUserTeamRole 
+  getUserTeamRole,
+  getTeamAssistants,
+  getTeamInvites
 } from '@/lib/supabase/team-assistant';
 import { z } from 'zod';
 
@@ -176,6 +179,149 @@ export async function removeAssistantAction(assistantId: string, teamId: string)
       return { success: false, error: error.errors[0]?.message || 'Dati non validi' };
     }
     return { success: false, error: error.message || 'Errore durante la rimozione del vice allenatore' };
+  }
+}
+
+export async function getTeamAssistantsAction(teamId: string) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    const assistants = await getTeamAssistants(teamId);
+    
+    return {
+      success: true,
+      assistants,
+    };
+  } catch (error: any) {
+    console.error('Get team assistants error:', error);
+    return { error: error.message || 'Errore durante il recupero dei vice allenatori' };
+  }
+}
+
+export async function getTeamInvitesAction(teamId: string) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    const invites = await getTeamInvites(teamId);
+    
+    return {
+      success: true,
+      invites,
+    };
+  } catch (error: any) {
+    console.error('Get team invites error:', error);
+    return { error: error.message || 'Errore durante il recupero degli inviti' };
+  }
+}
+
+export async function resendTeamInviteAction(inviteId: string) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    // Get invite details
+    const invite = await prisma.teamInvite.findUnique({
+      where: { id: inviteId },
+      include: {
+        team: {
+          select: {
+            coachId: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!invite) {
+      return { error: 'Invito non trovato' };
+    }
+
+    // Check if user is team owner
+    if (invite.team.coachId !== user.id) {
+      return { error: 'Non hai i permessi per gestire questo invito' };
+    }
+
+    // Update expiry date (extend by 7 days)
+    const newExpiryDate = new Date();
+    newExpiryDate.setDate(newExpiryDate.getDate() + 7);
+
+    await prisma.teamInvite.update({
+      where: { id: inviteId },
+      data: {
+        expiresAt: newExpiryDate,
+        createdAt: new Date(), // Update sent date
+      },
+    });
+
+    // TODO: Send email notification
+    // await sendInviteEmail(invite.email, invite.token, invite.team.name);
+
+    revalidatePath(`/teams/${invite.teamId}/members`);
+    revalidatePath(`/teams/${invite.teamId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Resend invite error:', error);
+    return { error: error.message || 'Errore durante l\'invio dell\'invito' };
+  }
+}
+
+export async function cancelTeamInviteAction(inviteId: string) {
+  try {
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return { error: 'Utente non autenticato' };
+    }
+
+    // Get invite details
+    const invite = await prisma.teamInvite.findUnique({
+      where: { id: inviteId },
+      include: {
+        team: {
+          select: {
+            coachId: true,
+          },
+        },
+      },
+    });
+
+    if (!invite) {
+      return { error: 'Invito non trovato' };
+    }
+
+    // Check if user is team owner
+    if (invite.team.coachId !== user.id) {
+      return { error: 'Non hai i permessi per gestire questo invito' };
+    }
+
+    // Delete invite
+    await prisma.teamInvite.delete({
+      where: { id: inviteId },
+    });
+
+    revalidatePath(`/teams/${invite.teamId}/members`);
+    revalidatePath(`/teams/${invite.teamId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Cancel invite error:', error);
+    return { error: error.message || 'Errore durante l\'annullamento dell\'invito' };
   }
 }
 

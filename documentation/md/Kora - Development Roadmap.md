@@ -19,8 +19,8 @@
   - [x] Team dashboard
   - [x] Edit team details
   - [x] Delete team (with confirmation)
-  - [ ] Team switcher (max 2 teams)
-  - [ ] Limite 2 squadre per account enforced
+  - [x] Team switcher (max 2 teams)
+  - [x] Limite 2 squadre per account enforced
 - [x] **Vice Allenatore System**
   - [x] Invito via email con Resend
   - [x] Pagina accettazione/rifiuto invito
@@ -32,7 +32,7 @@
   - [x] Colors and logo upload
   - [x] Home field management
   - [x] Season configuration
-  - [ ] Assistant management UI
+  - [x] Assistant management UI
 
 ### 👥 **Sprint 3: Player Management** (Settimana 3)
 - [ ] **Player Roster**

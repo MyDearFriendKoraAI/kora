@@ -23,16 +23,18 @@ type InviteFormData = z.infer<typeof inviteSchema>;
 
 interface InviteAssistantModalProps {
   team: Team;
-  currentAssistants: number;
-  assistantLimit: number;
+  currentAssistants?: number;
+  assistantLimit?: number;
   onClose: () => void;
+  onSuccess?: (email: string) => void;
 }
 
 export function InviteAssistantModal({
   team,
-  currentAssistants,
-  assistantLimit,
+  currentAssistants = 0,
+  assistantLimit = 1,
   onClose,
+  onSuccess,
 }: InviteAssistantModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -65,9 +67,13 @@ export function InviteAssistantModal({
 
       if (result.success) {
         toast.success('Invito inviato con successo!');
-        onClose();
-        // Refresh the page to show new invite
-        window.location.reload();
+        if (onSuccess) {
+          onSuccess(data.email);
+        } else {
+          onClose();
+          // Refresh the page to show new invite
+          window.location.reload();
+        }
       } else {
         toast.error(result.error || 'Errore durante l\'invio dell\'invito');
       }
