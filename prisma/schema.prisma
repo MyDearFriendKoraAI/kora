@@ -23,47 +23,146 @@ model User {
   teams             Team[]
   assistantTeams    TeamAssistant[]
   sentInvites       TeamInvite[]    @relation("InviterUser")
+  imports           ImportHistory[]
 
   @@map("users")
 }
 
 model Team {
-  id           String          @id @default(cuid())
+  id           String            @id @default(cuid())
   sport        SportType
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   category     String?
   coachId      String
   colors       Json?
   homeField    String?
-  isDeleted    Boolean         @default(false)
+  isDeleted    Boolean           @default(false)
   logo         String?
   name         String
-  season       String          @default("2024/2025")
+  season       String            @default("2024/2025")
   players      Player[]
-  coach        User            @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coach        User              @relation(fields: [coachId], references: [id], onDelete: Cascade)
   trainings    Training[]
   assistants   TeamAssistant[]
   invites      TeamInvite[]
+  customFields TeamCustomField[]
+  imports      ImportHistory[]
 
   @@map("teams")
 }
 
 model Player {
-  id           String       @id @default(cuid())
-  nome         String
-  cognome      String
-  dataNascita  DateTime
-  ruolo        String?
-  numeroMaglia Int?
-  teamId       String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  attendances  Attendance[]
-  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id               String             @id @default(cuid())
+  firstName        String             @map("nome")
+  lastName         String             @map("cognome")
+  birthDate        DateTime           @map("dataNascita")
+  role             String?            @map("ruolo")
+  number           Int?               @map("numeroMaglia")
+  status           PlayerStatus       @default(ACTIVE)
+  profileImage     String?
+  preferredFoot    PreferredFoot?
+  technicalNotes   String?
+  playerEmail      String?
+  
+  // Parent/Guardian info (for minors)
+  parent1Name      String?
+  parent1Phone     String?
+  parent1Email     String?
+  parent2Name      String?
+  parent2Phone     String?
+  parent2Email     String?
+  emergencyContact String?
+  emergencyPhone   String?
+  
+  // Medical info
+  medicalNotes     String?            // Encrypted
+  bloodType        String?
+  allergies        String?
+  medications      String?
+  
+  // Physical data
+  height           Int?
+  weight           Int?
+  shirtSize        String?
+  
+  // Administrative
+  category         String?            // For youth categories
+  schoolName       String?
+  fiscalCode       String?
+  
+  // System fields
+  injuryReturnDate DateTime?
+  isArchived       Boolean            @default(false)
+  importedAt       DateTime?          // Track imports
+  qrCode           String?            // Generated QR code
+  customFields     Json?              // Custom fields as JSON
+  
+  teamId           String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  // Relations
+  attendances      Attendance[]
+  medicalRecords   MedicalRecord[]
+  team             Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, numeroMaglia])
+  @@unique([teamId, number])
   @@map("players")
+}
+
+model MedicalRecord {
+  id           String            @id @default(cuid())
+  playerId     String
+  type         InjuryType
+  title        String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime?
+  estimatedEnd DateTime?
+  severity     InjurySeverity    @default(MINOR)
+  doctorName   String?
+  documentUrl  String?           // PDF certificate
+  notes        String?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  player       Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("medical_records")
+}
+
+model TeamCustomField {
+  id          String              @id @default(cuid())
+  teamId      String
+  name        String
+  type        CustomFieldType
+  options     Json?               // For dropdown options
+  required    Boolean             @default(false)
+  position    Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  team        Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_custom_fields")
+}
+
+model ImportHistory {
+  id            String            @id @default(cuid())
+  teamId        String
+  userId        String
+  filename      String
+  totalRows     Int
+  successCount  Int
+  errorCount    Int
+  errors        Json?             // Array of error details
+  canUndo       Boolean           @default(true)
+  undoExpiresAt DateTime
+  createdAt     DateTime          @default(now())
+  team          Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("import_history")
 }
 
 model Training {
@@ -190,4 +289,43 @@ enum TeamInviteStatus {
   ACCEPTED
   REJECTED
   EXPIRED
+}
+
+enum PlayerStatus {
+  ACTIVE
+  INJURED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum PreferredFoot {
+  LEFT
+  RIGHT
+  BOTH
+}
+
+enum InjuryType {
+  MUSCLE_STRAIN
+  LIGAMENT_SPRAIN
+  BONE_FRACTURE
+  JOINT_DISLOCATION
+  CONCUSSION
+  BRUISE_CONTUSION
+  CUT_LACERATION
+  OVERUSE_INJURY
+  OTHER
+}
+
+enum InjurySeverity {
+  MINOR
+  MODERATE
+  SEVERE
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  DROPDOWN
+  BOOLEAN
 }

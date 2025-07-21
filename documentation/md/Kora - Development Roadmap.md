@@ -35,21 +35,21 @@
   - [x] Assistant management UI
 
 ### 👥 **Sprint 3: Player Management** (Settimana 3)
-- [ ] **Player Roster**
-  - [ ] Add player form
-  - [ ] Player list view (cards)
-  - [ ] Player detail page
-  - [ ] Edit player info
-  - [ ] Archive/activate players
-  - [ ] Permissions check (owner + assistant)
-- [ ] **Import/Export**
-  - [ ] CSV import roster
-  - [ ] Export to CSV/PDF (owner only)
-  - [ ] Bulk operations
-- [ ] **Player Features**
-  - [ ] Photo upload
-  - [ ] Medical notes
-  - [ ] Parent contacts (for minors)
+- [x] **Player Roster**
+  - [x] Add player form
+  - [x] Player list view (cards)
+  - [x] Player detail page
+  - [x] Edit player info
+  - [x] Archive/activate players
+  - [x] Permissions check (owner + assistant)
+- [x] **Import/Export**
+  - [x] CSV import roster
+  - [x] Export to CSV/PDF (owner only)
+  - [x] Bulk operations
+- [x] **Player Features**
+  - [x] Photo upload
+  - [x] Medical notes
+  - [x] Parent contacts (for minors)
 
 ### 🏃 **Sprint 4: Training Core** (Settimana 4)
 - [ ] **Training Sessions**

@@ -6,13 +6,14 @@ import type { Team } from '@/lib/supabase/team';
 
 interface TeamStore {
   currentTeam: Team | null;
-  userTeams: Team[];
+  teams: Team[];
   isLoading: boolean;
   
   // Actions
   setCurrentTeam: (team: Team | null) => void;
-  setUserTeams: (teams: Team[]) => void;
+  setTeams: (teams: Team[]) => void;
   setLoading: (loading: boolean) => void;
+  setUserTeams: (teams: Team[]) => void;
   
   // Helper getters
   canCreateTeam: () => boolean;
@@ -23,15 +24,15 @@ export const useTeamStore = create<TeamStore>()(
   persist(
     (set, get) => ({
       currentTeam: null,
-      userTeams: [],
-      isLoading: false,
+      teams: [],
+      isLoading: true, // Start with loading true
 
       setCurrentTeam: (team) => {
         set({ currentTeam: team });
       },
 
-      setUserTeams: (teams) => {
-        set({ userTeams: teams });
+      setTeams: (teams) => {
+        set({ teams, isLoading: false }); // Set loading to false when teams are set
         
         // Auto-select first team if no current team is set
         const { currentTeam } = get();
@@ -39,10 +40,14 @@ export const useTeamStore = create<TeamStore>()(
           set({ currentTeam: teams[0] });
         }
         
-        // Clear current team if it's no longer in user teams
+        // Clear current team if it's no longer in teams
         if (currentTeam && !teams.find(t => t.id === currentTeam.id)) {
           set({ currentTeam: teams.length > 0 ? teams[0] : null });
         }
+      },
+
+      setUserTeams: (teams: Team[]) => {
+        get().setTeams(teams);
       },
 
       setLoading: (loading) => {
@@ -50,16 +55,16 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       canCreateTeam: () => {
-        const { userTeams } = get();
-        return userTeams.length < 2;
+        const { teams } = get();
+        return teams.length < 2;
       },
 
       teamLimit: () => {
-        const { userTeams } = get();
+        const { teams } = get();
         return {
-          used: userTeams.length,
+          used: teams.length,
           max: 2,
-          canCreate: userTeams.length < 2,
+          canCreate: teams.length < 2,
         };
       },
     }),

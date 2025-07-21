@@ -17,7 +17,7 @@ export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitch
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   
-  const { currentTeam, userTeams, setCurrentTeam } = useTeamStore();
+  const { currentTeam, teams, setCurrentTeam } = useTeamStore();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,13 +51,13 @@ export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitch
   };
 
   // Don't show switcher if no teams
-  if (userTeams.length === 0) {
+  if (teams.length === 0) {
     return null;
   }
 
   // Single team - show name without dropdown
-  if (userTeams.length === 1) {
-    const team = userTeams[0];
+  if (teams.length === 1) {
+    const team = teams[0];
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         {/* Team Logo */}
@@ -158,7 +158,7 @@ export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitch
         >
           <div className="py-1">
             {/* Team Options */}
-            {userTeams.map((team) => (
+            {teams.map((team) => (
               <button
                 key={team.id}
                 onClick={() => handleTeamSelect(team)}
@@ -227,7 +227,7 @@ export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitch
             <div className="border-t border-gray-100 my-1"></div>
             
             {/* Create New Team */}
-            {userTeams.length < 2 ? (
+            {teams.length < 2 ? (
               <Link
                 href="/teams/new"
                 onClick={() => setIsOpen(false)}
@@ -241,7 +241,7 @@ export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitch
                 <div>
                   <p className="text-sm font-medium">Crea nuova squadra</p>
                   <p className="text-xs text-gray-500">
-                    {2 - userTeams.length} squadra disponibile
+                    {2 - teams.length} squadra disponibile
                   </p>
                 </div>
               </Link>

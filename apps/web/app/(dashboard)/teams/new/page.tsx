@@ -32,7 +32,7 @@ export default function NewTeamPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { userTeams, setUserTeams } = useTeamStore();
+  const { teams, setUserTeams } = useTeamStore();
 
   const {
     register,
@@ -56,7 +56,7 @@ export default function NewTeamPage() {
   const watchedColors = watch('colors');
 
   // Check team limit
-  const teamCount = userTeams.length;
+  const teamCount = teams.length;
   const maxCount = 2;
   const isAtLimit = teamCount >= maxCount;
 

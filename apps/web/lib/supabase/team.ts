@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { getTeamAssistantCount } from './team-assistant';
 
+export interface TeamMember {
+  userId: string;
+  role: 'owner' | 'assistant' | 'player' | 'viewer';
+  joinedAt: Date;
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -19,6 +25,7 @@ export interface Team {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  members?: TeamMember[];
   _count?: {
     players: number;
   };

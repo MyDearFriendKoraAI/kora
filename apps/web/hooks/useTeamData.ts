@@ -8,7 +8,7 @@ import { getUserTeamsAction } from '@/app/actions/team';
  * Hook to load and sync user teams data with the store
  */
 export function useTeamData() {
-  const { setUserTeams, setLoading, userTeams, isLoading } = useTeamStore();
+  const { setUserTeams, setLoading, teams, isLoading } = useTeamStore();
 
   useEffect(() => {
     async function loadTeams() {
@@ -31,14 +31,12 @@ export function useTeamData() {
       }
     }
 
-    // Only load if we don't have teams yet
-    if (userTeams.length === 0 && !isLoading) {
-      loadTeams();
-    }
-  }, [setUserTeams, setLoading, userTeams.length, isLoading]);
+    // Load teams on mount
+    loadTeams();
+  }, []); // Empty dependency array to run only on mount
 
   return {
-    userTeams,
+    userTeams: teams, // Return the teams directly
     isLoading,
     refetch: async () => {
       setLoading(true);

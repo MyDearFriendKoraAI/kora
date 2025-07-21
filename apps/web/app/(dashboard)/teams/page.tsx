@@ -6,6 +6,7 @@ import { TeamCard, TeamCardSkeleton } from '@/components/features/team/TeamCard'
 import { LimitBanner } from '@/components/features/team/LimitBanner';
 import { useTeamStore } from '@/stores/team-store';
 import { useTeamLimit } from '@/hooks/useTeamLimit';
+import { useTeamData } from '@/hooks/useTeamData';
 
 function TeamsHeader() {
   const { used: teamCount, limit: maxCount, isAtLimit } = useTeamLimit();
@@ -72,7 +73,7 @@ function TeamsHeader() {
 }
 
 function TeamsGrid() {
-  const { userTeams: teams, isLoading } = useTeamStore();
+  const { userTeams: teams, isLoading } = useTeamData();
 
   if (isLoading) {
     return <TeamsGridSkeleton />;
