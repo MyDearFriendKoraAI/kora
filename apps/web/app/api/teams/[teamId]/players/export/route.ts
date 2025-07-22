@@ -141,11 +141,11 @@ export async function GET(
 
       // Add medical data if requested
       if (includeMedical) {
-        const recentInjuries = includeMedical && player.medicalRecords 
-          ? player.medicalRecords
-              .filter(record => record.type === 'INJURY')
+        const recentInjuries = includeMedical && (player as any).medicalRecords 
+          ? (player as any).medicalRecords
+              .filter((record: any) => record.type === 'MUSCLE_STRAIN' || record.type === 'BONE_FRACTURE')
               .slice(0, 3)
-              .map(record => `${record.description} (${record.date.toLocaleDateString('it-IT')})`)
+              .map((record: any) => `${record.title} (${record.startDate.toLocaleDateString('it-IT')})`)
               .join('; ')
           : ''
 

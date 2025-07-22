@@ -289,9 +289,9 @@ export default function PlayerDetailPage() {
                           </div>
                         </div>
                         <span className={`text-sm font-medium ${
-                          attendance.presente ? 'text-green-600' : 'text-red-600'
+                          attendance.status === 'PRESENT' ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {attendance.presente ? 'Presente' : 'Assente'}
+                          {attendance.status === 'PRESENT' ? 'Presente' : 'Assente'}
                         </span>
                       </div>
                     ))}

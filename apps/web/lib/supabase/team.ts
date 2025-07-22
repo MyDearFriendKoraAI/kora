@@ -309,12 +309,12 @@ export async function getTeamStats(teamId: string, userId: string) {
         },
         trainings: {
           where: {
-            data: {
+            date: {
               gte: new Date(),
             },
           },
           orderBy: {
-            data: 'asc',
+            date: 'asc',
           },
           take: 1,
         },
@@ -329,12 +329,12 @@ export async function getTeamStats(teamId: string, userId: string) {
     const lastTraining = await prisma.training.findFirst({
       where: {
         teamId: teamId,
-        data: {
+        date: {
           lt: new Date(),
         },
       },
       orderBy: {
-        data: 'desc',
+        date: 'desc',
       },
     });
 
@@ -346,8 +346,8 @@ export async function getTeamStats(teamId: string, userId: string) {
       trainingsCount: team._count.trainings,
       upcomingTrainings: team.trainings.length,
       assistantsCount,
-      lastTraining: lastTraining?.data.toISOString(),
-      nextTraining: team.trainings[0]?.data.toISOString(),
+      lastTraining: lastTraining?.date.toISOString(),
+      nextTraining: team.trainings[0]?.date.toISOString(),
     };
   } catch (error: any) {
     console.error('Error fetching team stats:', error);

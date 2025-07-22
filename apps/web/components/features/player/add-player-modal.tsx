@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
@@ -151,12 +151,10 @@ export function AddPlayerModal({
       const mappedData = {
         firstName: data.firstName,
         lastName: data.lastName,
-        birthDate: data.birthDate.toISOString(),
+        birthDate: data.birthDate,
         number: data.number,
         role: data.role,
-        preferredFoot: data.preferredFoot === 'destro' ? 'RIGHT' : 
-                      data.preferredFoot === 'sinistro' ? 'LEFT' : 
-                      data.preferredFoot === 'ambidestro' ? 'BOTH' : undefined,
+        preferredFoot: data.preferredFoot,
         technicalNotes: data.technicalNotes || undefined,
         playerEmail: data.playerEmail || undefined,
         parentName: data.parentName || undefined,

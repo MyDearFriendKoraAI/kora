@@ -159,7 +159,7 @@ export function PlayerTable({
                   <TableCell>
                     <PlayerStatusBadge 
                       status={player.status}
-                      returnDate={player.injuryReturnDate}
+                      returnDate={player.injuryReturnDate || undefined}
                       compact
                     />
                   </TableCell>

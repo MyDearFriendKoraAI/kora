@@ -24,7 +24,7 @@ export interface Player {
   attendanceLastMonth: number
   recentAttendances?: Array<{
     id: string
-    presente: boolean
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | 'INJURED'
     note: string | null
     date: string
     trainingTitle: string

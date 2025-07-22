@@ -163,7 +163,7 @@ export function PlayerCard({ player, teamId, isSelected = false, onSelect }: Pla
       <div className="space-y-3">
         <PlayerStatusBadge 
           status={player.status} 
-          returnDate={player.injuryReturnDate}
+          returnDate={player.injuryReturnDate || undefined}
         />
 
         <div className="grid grid-cols-2 gap-2 text-sm">

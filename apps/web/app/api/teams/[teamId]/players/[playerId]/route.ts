@@ -13,8 +13,8 @@ const updatePlayerSchema = z.object({
   preferredFoot: z.enum(['LEFT', 'RIGHT', 'BOTH']).optional(),
   technicalNotes: z.string().optional(),
   playerEmail: z.string().email().optional().or(z.literal('')),
-  parentName: z.string().optional(),
-  parentPhone: z.string().optional(),
+  parent1Name: z.string().optional(),
+  parent1Phone: z.string().optional(),
   emergencyContact: z.string().optional(),
   profileImage: z.string().optional(),
   height: z.number().optional(),
@@ -41,7 +41,7 @@ export async function GET(
           select: {
             attendances: {
               where: {
-                presente: true,
+                status: 'PRESENT',
                 createdAt: {
                   gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
                 },
@@ -53,14 +53,14 @@ export async function GET(
           include: {
             training: {
               select: {
-                data: true,
-                titolo: true,
+                date: true,
+                type: true,
               },
             },
           },
           orderBy: {
             training: {
-              data: 'desc',
+              date: 'desc',
             },
           },
           take: 10, // Ultime 10 presenze
@@ -89,8 +89,8 @@ export async function GET(
       preferredFoot: player.preferredFoot?.toLowerCase(),
       technicalNotes: player.technicalNotes,
       playerEmail: player.playerEmail,
-      parentName: player.parentName,
-      parentPhone: player.parentPhone,
+      parentName: player.parent1Name,
+      parentPhone: player.parent1Phone,
       emergencyContact: player.emergencyContact,
       height: player.height,
       weight: player.weight,
@@ -98,10 +98,10 @@ export async function GET(
       attendanceLastMonth: player._count.attendances,
       recentAttendances: player.attendances.map((attendance) => ({
         id: attendance.id,
-        presente: attendance.presente,
+        status: attendance.status,
         note: attendance.note,
-        date: attendance.training.data.toISOString(),
-        trainingTitle: attendance.training.titolo,
+        date: attendance.training.date.toISOString(),
+        trainingType: attendance.training.type,
       })),
       createdAt: player.createdAt.toISOString(),
       updatedAt: player.updatedAt.toISOString(),
@@ -192,7 +192,7 @@ export async function PUT(
           select: {
             attendances: {
               where: {
-                presente: true,
+                status: 'PRESENT',
                 createdAt: {
                   gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
                 },
@@ -217,8 +217,8 @@ export async function PUT(
       preferredFoot: updatedPlayer.preferredFoot?.toLowerCase(),
       technicalNotes: updatedPlayer.technicalNotes,
       playerEmail: updatedPlayer.playerEmail,
-      parentName: updatedPlayer.parentName,
-      parentPhone: updatedPlayer.parentPhone,
+      parentName: updatedPlayer.parent1Name,
+      parentPhone: updatedPlayer.parent1Phone,
       emergencyContact: updatedPlayer.emergencyContact,
       height: updatedPlayer.height,
       weight: updatedPlayer.weight,

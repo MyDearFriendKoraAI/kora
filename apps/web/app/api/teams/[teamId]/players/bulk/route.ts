@@ -197,7 +197,7 @@ export async function DELETE(
       },
       data: {
         status: 'ARCHIVED',
-        deletedAt: new Date(),
+        isArchived: true,
         updatedAt: new Date()
       }
     })

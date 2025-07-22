@@ -12,8 +12,8 @@ const createPlayerSchema = z.object({
   preferredFoot: z.enum(['LEFT', 'RIGHT', 'BOTH']).optional(),
   technicalNotes: z.string().optional(),
   playerEmail: z.string().email().optional().or(z.literal('')),
-  parentName: z.string().optional(),
-  parentPhone: z.string().optional(),
+  parent1Name: z.string().optional(),
+  parent1Phone: z.string().optional(),
   emergencyContact: z.string().optional(),
   profileImage: z.string().optional(),
   height: z.number().optional(),
@@ -82,7 +82,7 @@ export async function GET(
           select: {
             attendances: {
               where: {
-                presente: true,
+                status: 'PRESENT',
                 createdAt: {
                   gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Ultimo mese
                 },
@@ -107,8 +107,8 @@ export async function GET(
       preferredFoot: player.preferredFoot?.toLowerCase(),
       technicalNotes: player.technicalNotes,
       playerEmail: player.playerEmail,
-      parentName: player.parentName,
-      parentPhone: player.parentPhone,
+      parentName: player.parent1Name,
+      parentPhone: player.parent1Phone,
       emergencyContact: player.emergencyContact,
       height: player.height,
       weight: player.weight,
@@ -195,8 +195,8 @@ export async function POST(
         preferredFoot: validatedData.preferredFoot,
         technicalNotes: validatedData.technicalNotes,
         playerEmail: validatedData.playerEmail || null,
-        parentName: validatedData.parentName,
-        parentPhone: validatedData.parentPhone,
+        parent1Name: validatedData.parent1Name,
+        parent1Phone: validatedData.parent1Phone,
         emergencyContact: validatedData.emergencyContact,
         profileImage: validatedData.profileImage,
         height: validatedData.height,
@@ -226,8 +226,8 @@ export async function POST(
       preferredFoot: newPlayer.preferredFoot?.toLowerCase(),
       technicalNotes: newPlayer.technicalNotes,
       playerEmail: newPlayer.playerEmail,
-      parentName: newPlayer.parentName,
-      parentPhone: newPlayer.parentPhone,
+      parentName: newPlayer.parent1Name,
+      parentPhone: newPlayer.parent1Phone,
       emergencyContact: newPlayer.emergencyContact,
       height: newPlayer.height,
       weight: newPlayer.weight,

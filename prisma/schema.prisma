@@ -48,6 +48,7 @@ model Team {
   invites      TeamInvite[]
   customFields TeamCustomField[]
   imports      ImportHistory[]
+  templates    TrainingTemplate[]
 
   @@map("teams")
 }
@@ -166,32 +167,57 @@ model ImportHistory {
 }
 
 model Training {
-  id          String       @id @default(cuid())
-  titolo      String
-  descrizione String?
-  data        DateTime
-  durata      Int
-  teamId      String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  attendances Attendance[]
-  team        Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  type             TrainingType   @default(REGULAR)
+  date             DateTime
+  duration         Int            @default(90) // minutes
+  location         String?
+  focusAreas       String[]       @default([])
+  plannedPlayers   Int?
+  status           TrainingStatus @default(SCHEDULED)
+  weatherForecast  Json?
+  coachNotes       String?
+  plan             Json?          // TrainingPlan structure
+  recurringPattern Json?          // Recurrence rules
+  parentTrainingId String?        // For recurring trainings
+  teamId           String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  createdBy        String?
+  
+  attendances      Attendance[]
+  team             Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  parentTraining   Training?      @relation("RecurringTrainings", fields: [parentTrainingId], references: [id])
+  childTrainings   Training[]     @relation("RecurringTrainings")
+  templates        TrainingTemplate[]
 
+  @@index([teamId, date])
   @@map("trainings")
 }
 
 model Attendance {
-  id         String   @id @default(cuid())
-  presente   Boolean  @default(false)
-  note       String?
-  playerId   String
-  trainingId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  status          AttendanceStatus  @default(PRESENT)
+  arrivalTime     DateTime?         // Orario arrivo effettivo
+  departureTime   DateTime?         // Orario uscita (se anticipata)
+  absenceReason   AbsenceReason?    // Motivo assenza
+  isJustified     Boolean           @default(false)
+  justification   String?           // Testo libero giustificazione
+  markedBy        String?           // Chi ha marcato la presenza
+  checkedInVia    CheckInMethod     @default(MANUAL)
+  location        Json?             // Dati geolocation se presente
+  note            String?           // Note libere
+  playerId        String
+  trainingId      String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  player          Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  training        Training          @relation(fields: [trainingId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, trainingId])
+  @@index([trainingId, status])
+  @@index([playerId, createdAt])
   @@map("attendances")
 }
 
@@ -265,6 +291,26 @@ model TeamInvite {
   @@map("team_invites")
 }
 
+model TrainingTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        TrainingType
+  duration    Int      @default(90)
+  focusAreas  String[] @default([])
+  plan        Json     // TrainingPlan structure
+  teamId      String
+  trainingId  String?
+  isGlobal    Boolean  @default(false) // Team templates vs system templates
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  training    Training? @relation(fields: [trainingId], references: [id])
+
+  @@map("training_templates")
+}
+
 enum UserTier {
   FREE
   LEVEL1
@@ -328,4 +374,45 @@ enum CustomFieldType {
   DATE
   DROPDOWN
   BOOLEAN
+}
+
+enum TrainingType {
+  REGULAR
+  MATCH_PREP
+  RECOVERY
+  TACTICAL
+  TECHNICAL
+  PHYSICAL
+}
+
+enum TrainingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  INJURED
+  EARLY_DEPARTURE
+}
+
+enum AbsenceReason {
+  ILLNESS
+  STUDY
+  FAMILY
+  INJURY
+  VACATION
+  DISCIPLINARY
+  OTHER
+}
+
+enum CheckInMethod {
+  MANUAL
+  QR_CODE
+  GEOLOCATION
+  SELF_CHECKIN
 }

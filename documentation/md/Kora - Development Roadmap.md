@@ -52,19 +52,19 @@
   - [x] Parent contacts (for minors)
 
 ### 🏃 **Sprint 4: Training Core** (Settimana 4)
-- [ ] **Training Sessions**
-  - [ ] Calendar view
-  - [ ] Create training session (owner + assistant)
-  - [ ] Training types and focus areas
-  - [ ] Duration and location
-  - [ ] Training plan structure
-  - [ ] Creator tracking (who created)
-- [ ] **Attendance System**
-  - [ ] Quick attendance marking
-  - [ ] Absence justification
-  - [ ] Attendance history
-  - [ ] Statistics dashboard
-  - [ ] Marker tracking (who marked)
+- [x] **Training Sessions**
+  - [x] Calendar view
+  - [x] Create training session (owner + assistant)
+  - [x] Training types and focus areas
+  - [x] Duration and location
+  - [x] Training plan structure
+  - [x] Creator tracking (who created)
+- [x] **Attendance System**
+  - [x] Quick attendance marking
+  - [x] Absence justification
+  - [x] Attendance history
+  - [x] Statistics dashboard
+  - [x] Marker tracking (who marked)
 
 ---
 
