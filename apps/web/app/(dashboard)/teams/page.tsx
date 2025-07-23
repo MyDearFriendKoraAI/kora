@@ -6,7 +6,8 @@ import { TeamCard, TeamCardSkeleton } from '@/components/features/team/TeamCard'
 import { LimitBanner } from '@/components/features/team/LimitBanner';
 import { useTeamStore } from '@/stores/team-store';
 import { useTeamLimit } from '@/hooks/useTeamLimit';
-import { useTeamData } from '@/hooks/useTeamData';
+import { useTeams } from '@/hooks/queries/useTeams';
+import { useHoverPrefetch } from '@/hooks/queries/usePrefetch';
 
 function TeamsHeader() {
   const { used: teamCount, limit: maxCount, isAtLimit } = useTeamLimit();
@@ -73,7 +74,8 @@ function TeamsHeader() {
 }
 
 function TeamsGrid() {
-  const { userTeams: teams, isLoading } = useTeamData();
+  const { teams, isLoading } = useTeams();
+  const { teamCardHover } = useHoverPrefetch();
 
   if (isLoading) {
     return <TeamsGridSkeleton />;
@@ -102,18 +104,19 @@ function TeamsGrid() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {teams.map((team) => (
-        <TeamCard
-          key={team.id}
-          id={team.id}
-          name={team.name}
-          sport={team.sport}
-          category={team.category}
-          logo={team.logo}
-          colors={team.colors}
-          playerCount={team._count?.players || 0}
-          role="owner" // All teams in this view are owned by the user
-        />
+      {teams.map((team: any) => (
+        <div key={team.id} {...teamCardHover(team.id)}>
+          <TeamCard
+            id={team.id}
+            name={team.name}
+            sport={team.sport}
+            category={team.category}
+            logo={team.logo}
+            colors={team.colors}
+            playerCount={team._count?.players || 0}
+            role="owner" // All teams in this view are owned by the user
+          />
+        </div>
       ))}
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/components/features/auth/UserMenu";
 import { TeamSwitcher } from "@/components/features/team/TeamSwitcher";
-import { useTeamData } from "@/hooks/useTeamData";
+import { useTeams } from "@/hooks/queries/useTeams";
+import { usePrefetch } from "@/hooks/queries/usePrefetch";
 
 export default function DashboardLayout({
   children,
@@ -13,8 +15,16 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   
-  // Load user teams data
-  useTeamData();
+  // Load user teams data with React Query
+  const { teams, isLoading } = useTeams();
+  
+  // Setup prefetching
+  const { warmUpCache } = usePrefetch();
+  
+  // Warm up cache on mount
+  React.useEffect(() => {
+    warmUpCache();
+  }, []);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },

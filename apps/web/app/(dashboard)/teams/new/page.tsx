@@ -19,7 +19,7 @@ import {
   SPORT_DEFAULT_COLORS,
   SportTypeEnum 
 } from '@/lib/validations/team';
-import { createTeamAction, getUserTeamsAction } from '@/app/actions/team';
+import { useCreateTeam, useTeams } from '@/hooks/queries/useTeams';
 import { useTeamStore } from '@/stores/team-store';
 
 const STEPS = [
@@ -30,9 +30,9 @@ const STEPS = [
 
 export default function NewTeamPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { teams, setUserTeams } = useTeamStore();
+  const { teams } = useTeams();
+  const createTeam = useCreateTeam();
 
   const {
     register,
@@ -56,7 +56,7 @@ export default function NewTeamPage() {
   const watchedColors = watch('colors');
 
   // Check team limit
-  const teamCount = teams.length;
+  const teamCount = teams?.length || 0;
   const maxCount = 2;
   const isAtLimit = teamCount >= maxCount;
 
@@ -94,28 +94,19 @@ export default function NewTeamPage() {
 
   const onSubmit = async (data: CreateTeamFormData) => {
     try {
-      setIsLoading(true);
-      const result = await createTeamAction(data);
-
-      if (result?.error) {
-        toast.error(result.error);
-        return;
-      }
+      const result = await new Promise<any>((resolve, reject) => {
+        createTeam.mutate(data, {
+          onSuccess: (result) => resolve(result),
+          onError: (error) => reject(error),
+        });
+      });
 
       if (result?.success && result.teamId) {
-        // Refresh teams data in store
-        const teamsResult = await getUserTeamsAction();
-        if (teamsResult.success && teamsResult.teams) {
-          setUserTeams(teamsResult.teams);
-        }
-        
-        toast.success('Squadra creata con successo!');
         router.push(`/teams/${result.teamId}`);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Errore durante la creazione della squadra');
-    } finally {
-      setIsLoading(false);
+      // Error handling is already done in the mutation
+      console.error('Form submission error:', error);
     }
   };
 
@@ -270,7 +261,7 @@ export default function NewTeamPage() {
               onPrevious={handlePrevious}
               onNext={handleNext}
               onSubmit={handleSubmit(onSubmit)}
-              isLoading={isLoading}
+              isLoading={createTeam.isPending}
               canProceed={canProceed()}
             />
           </form>
