@@ -8,6 +8,7 @@ interface TeamStore {
   currentTeam: Team | null;
   teams: Team[];
   isLoading: boolean;
+  hasLoaded: boolean;
   
   // Actions
   setCurrentTeam: (team: Team | null) => void;
@@ -26,13 +27,14 @@ export const useTeamStore = create<TeamStore>()(
       currentTeam: null,
       teams: [],
       isLoading: true, // Start with loading true
+      hasLoaded: false,
 
       setCurrentTeam: (team) => {
         set({ currentTeam: team });
       },
 
       setTeams: (teams) => {
-        set({ teams, isLoading: false }); // Set loading to false when teams are set
+        set({ teams, isLoading: false, hasLoaded: true }); // Set loading to false and hasLoaded to true when teams are set
         
         // Auto-select first team if no current team is set
         const { currentTeam } = get();
