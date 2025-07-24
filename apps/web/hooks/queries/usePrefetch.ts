@@ -91,6 +91,7 @@ export function usePrefetch() {
         return response.json();
       },
       staleTime: QUERY_STALE_TIMES.trainings,
+      retry: false, // Disabilita retry per prefetch
     });
     
     // Prefetch team stats se abbiamo un teamId

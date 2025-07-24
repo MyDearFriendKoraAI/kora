@@ -279,12 +279,15 @@ export function useUpcomingTrainings(teamId?: string, limit = 5) {
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch upcoming trainings: ${response.statusText}`);
+        const error = new Error(`Failed to fetch upcoming trainings: ${response.statusText}`) as any;
+        error.status = response.status;
+        throw error;
       }
       
       return response.json();
     },
     staleTime: QUERY_STALE_TIMES.trainings,
+    retry: false, // Disabilita retry per questo hook
   });
 }
 

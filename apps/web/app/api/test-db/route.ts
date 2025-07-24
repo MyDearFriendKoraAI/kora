@@ -10,6 +10,13 @@ export async function GET() {
     // Test database connection
     const userCount = await prisma.user.count();
     const teamCount = await prisma.team.count();
+    const trainingCount = await prisma.training.count();
+    
+    // Get first user for testing
+    const firstUser = await prisma.user.findFirst();
+    const teamsWithUser = firstUser ? await prisma.team.count({
+      where: { coachId: firstUser.id }
+    }) : 0;
     
     return NextResponse.json({
       success: true,
@@ -21,7 +28,10 @@ export async function GET() {
       database: {
         userCount,
         teamCount,
+        trainingCount,
         connected: true,
+        firstUserId: firstUser?.id,
+        teamsOwnedByFirstUser: teamsWithUser,
       },
     });
   } catch (error: any) {

@@ -7,29 +7,16 @@ export const queryClient = new QueryClient({
       staleTime: 60 * 1000, // 1 minuto di default
       // Tempo di cache prima della garbage collection
       gcTime: 10 * 60 * 1000, // 10 minuti
-      // Retry automatico con exponential backoff
-      retry: (failureCount, error: any) => {
-        // Non fare retry per errori 4xx
-        if (error?.status >= 400 && error?.status < 500) {
-          return false;
-        }
-        // Max 3 retry
-        return failureCount < 3;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Disabilita retry globalmente
+      retry: false,
       // Refetch on window focus
       refetchOnWindowFocus: false,
       // Refetch on reconnect
       refetchOnReconnect: 'always',
     },
     mutations: {
-      // Retry mutations solo per network errors
-      retry: (failureCount, error: any) => {
-        if (error?.status >= 400 && error?.status < 500) {
-          return false;
-        }
-        return failureCount < 1;
-      },
+      // Disabilita retry anche per mutations
+      retry: false,
     },
   },
 });
