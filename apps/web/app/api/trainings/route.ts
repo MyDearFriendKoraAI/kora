@@ -8,11 +8,8 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.error('Auth error in /api/trainings:', authError);
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
     }
-
-    console.log('User ID for trainings query:', user.id);
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
@@ -20,8 +17,6 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'date';
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'asc';
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
-
-    console.log('Query params:', { status, limit, sortBy, sortOrder, offset });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -31,9 +26,6 @@ export async function GET(request: NextRequest) {
         coachId: user.id
       }
     };
-
-    console.log('Today date:', today);
-    console.log('Where condition before date filter:', whereCondition);
 
     if (status === 'upcoming') {
       whereCondition.date = {
@@ -45,7 +37,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    console.log('Final where condition:', JSON.stringify(whereCondition, null, 2));
 
     const [trainings, total] = await Promise.all([
       prisma.training.findMany({
@@ -77,9 +68,6 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
-    console.log('Found trainings count:', trainings.length);
-    console.log('Total trainings in database:', total);
-    console.log('First training (if any):', trainings[0]);
 
     return NextResponse.json({
       trainings: trainings || [],
@@ -87,12 +75,6 @@ export async function GET(request: NextRequest) {
       hasMore: offset + trainings.length < total
     });
   } catch (error) {
-    console.error('Error fetching trainings:', {
-      message: (error as any)?.message,
-      code: (error as any)?.code,
-      name: (error as any)?.name,
-      stack: (error as any)?.stack
-    });
     
     // Se è un errore di Prisma per tabella non trovata, restituisci array vuoto
     if ((error as any)?.code === 'P2021' || (error as any)?.message?.includes('does not exist')) {

@@ -30,7 +30,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DatePicker } from '@/components/ui/date-picker'
 import { TrainingType } from '@prisma/client'
 import { TrainingPlanBuilder } from './training-plan-builder'
 
@@ -110,8 +109,6 @@ export function CreateTrainingModal({
   })
 
   const onSubmit = async (data: FormData) => {
-    console.log('Form submitted with data:', data);
-    
     try {
       // Map location values to readable strings
       const locationMap: Record<string, string> = {
@@ -134,8 +131,6 @@ export function CreateTrainingModal({
         coachNotes: data.coachNotes,
       }
 
-      console.log('Sending training data:', trainingData);
-
       // Create training via API
       const response = await fetch(`/api/teams/${teamId}/trainings`, {
         method: 'POST',
@@ -145,16 +140,12 @@ export function CreateTrainingModal({
         body: JSON.stringify(trainingData),
       })
 
-      console.log('API Response status:', response.status);
-      
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('API error response:', errorData);
         throw new Error(`Failed to create training: ${errorData}`)
       }
 
       const newTraining = await response.json()
-      console.log('Training created successfully:', newTraining)
       
       // Close modal and reset form
       onOpenChange(false)
@@ -166,7 +157,6 @@ export function CreateTrainingModal({
         window.location.reload()
       }, 100)
     } catch (error) {
-      console.error('Error creating training:', error)
       alert('Errore nella creazione dell\'allenamento: ' + (error as Error).message)
     }
   }
@@ -192,9 +182,6 @@ export function CreateTrainingModal({
     if (step > 1) setStep(step - 1)
   }
   
-  // Debug form errors
-  const formErrors = form.formState.errors;
-  console.log('Form errors:', formErrors);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,10 +226,20 @@ export function CreateTrainingModal({
                     <FormItem>
                       <FormLabel>Data</FormLabel>
                       <FormControl>
-                        <DatePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                          minDate={new Date()}
+                        <Input
+                          type="date"
+                          value={field.value ? 
+                            new Date(field.value.getTime() - field.value.getTimezoneOffset() * 60000)
+                              .toISOString().split('T')[0] : ''}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              // Crea la data nel fuso orario locale per evitare problemi di offset
+                              const [year, month, day] = e.target.value.split('-').map(Number);
+                              const localDate = new Date(year, month - 1, day);
+                              field.onChange(localDate);
+                            }
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
                         />
                       </FormControl>
                       <FormMessage />
@@ -557,11 +554,6 @@ export function CreateTrainingModal({
                 <Button 
                   type="submit" 
                   className="bg-blue-600 hover:bg-blue-700"
-                  onClick={(e) => {
-                    console.log('Submit button clicked');
-                    console.log('Form is valid:', form.formState.isValid);
-                    console.log('Form values:', form.getValues());
-                  }}
                 >
                   Salva Allenamento
                 </Button>

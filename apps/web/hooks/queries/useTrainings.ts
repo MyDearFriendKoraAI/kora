@@ -102,7 +102,6 @@ export function useCreateTraining(teamId: string) {
       toast.success('Allenamento creato con successo!');
     },
     onError: (error: any) => {
-      console.error('Create training error:', error);
       toast.error(error.message || 'Errore durante la creazione dell\'allenamento');
     },
   });
@@ -137,7 +136,6 @@ export function useUpdateTraining(teamId: string) {
       toast.success('Allenamento aggiornato con successo!');
     },
     onError: (error: any) => {
-      console.error('Update training error:', error);
       toast.error(error.message || 'Errore durante l\'aggiornamento dell\'allenamento');
     },
   });
@@ -171,7 +169,6 @@ export function useDeleteTraining(teamId: string) {
       toast.success('Allenamento eliminato con successo!');
     },
     onError: (error: any) => {
-      console.error('Delete training error:', error);
       toast.error(error.message || 'Errore durante l\'eliminazione dell\'allenamento');
     },
   });
@@ -223,7 +220,6 @@ export function useTrainingAttendance(teamId: string, trainingId: string) {
       toast.success('Presenze aggiornate con successo!');
     },
     onError: (error: any) => {
-      console.error('Update attendance error:', error);
       toast.error(error.message || 'Errore durante l\'aggiornamento delle presenze');
     },
   });
@@ -276,22 +272,16 @@ export function useUpcomingTrainings(teamId?: string, limit = 5) {
         ? `/api/teams/${teamId}/trainings?${params}`
         : `/api/trainings?${params}`; // Endpoint per tutti i teams dell'utente
       
-      console.log('Fetching trainings from URL:', url);
-      
       const response = await fetch(url);
-      
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API error response:', errorText);
         const error = new Error(`Failed to fetch upcoming trainings: ${response.statusText}`) as any;
         error.status = response.status;
         throw error;
       }
       
       const data = await response.json();
-      console.log('Trainings API response:', data);
       return data.trainings || []; // Restituisci solo l'array di trainings
     },
     staleTime: QUERY_STALE_TIMES.trainings,
