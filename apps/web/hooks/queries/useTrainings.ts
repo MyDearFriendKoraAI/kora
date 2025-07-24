@@ -276,15 +276,23 @@ export function useUpcomingTrainings(teamId?: string, limit = 5) {
         ? `/api/teams/${teamId}/trainings?${params}`
         : `/api/trainings?${params}`; // Endpoint per tutti i teams dell'utente
       
+      console.log('Fetching trainings from URL:', url);
+      
       const response = await fetch(url);
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
         const error = new Error(`Failed to fetch upcoming trainings: ${response.statusText}`) as any;
         error.status = response.status;
         throw error;
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('Trainings API response:', data);
+      return data.trainings || []; // Restituisci solo l'array di trainings
     },
     staleTime: QUERY_STALE_TIMES.trainings,
     retry: false, // Disabilita retry per questo hook

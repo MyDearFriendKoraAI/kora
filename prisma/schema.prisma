@@ -187,7 +187,7 @@ model Training {
   
   attendances      Attendance[]
   team             Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  parentTraining   Training?      @relation("RecurringTrainings", fields: [parentTrainingId], references: [id])
+  parentTraining   Training?      @relation("RecurringTrainings", fields: [parentTrainingId], references: [id], onDelete: SetNull)
   childTrainings   Training[]     @relation("RecurringTrainings")
   templates        TrainingTemplate[]
 
@@ -306,7 +306,7 @@ model TrainingTemplate {
   updatedAt   DateTime @updatedAt
   
   team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  training    Training? @relation(fields: [trainingId], references: [id])
+  training    Training? @relation(fields: [trainingId], references: [id], onDelete: SetNull)
 
   @@map("training_templates")
 }

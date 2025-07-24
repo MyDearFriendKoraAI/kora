@@ -103,34 +103,102 @@ export function CreateTrainingModal({
       duration: '90',
       recurrence: 'single',
       type: 'REGULAR',
+      location: 'main',
       focusAreas: [],
       useTemplate: false,
     },
   })
 
   const onSubmit = async (data: FormData) => {
+    console.log('Form submitted with data:', data);
+    
     try {
+      // Map location values to readable strings
+      const locationMap: Record<string, string> = {
+        main: 'Campo Principale',
+        secondary: 'Campo Secondario',
+        gym: 'Palestra',
+        other: data.customLocation || 'Altro'
+      };
+
+      // Prepare the training data
+      const trainingData = {
+        date: data.date.toISOString(),
+        startTime: data.startTime,
+        duration: parseInt(data.duration),
+        type: data.type,
+        location: locationMap[data.location] || data.location,
+        focusAreas: data.focusAreas,
+        plannedPlayers: data.plannedPlayers,
+        plan: data.plan,
+        coachNotes: data.coachNotes,
+      }
+
+      console.log('Sending training data:', trainingData);
+
       // Create training via API
-      console.log('Creating training:', data)
+      const response = await fetch(`/api/teams/${teamId}/trainings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(trainingData),
+      })
+
+      console.log('API Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API error response:', errorData);
+        throw new Error(`Failed to create training: ${errorData}`)
+      }
+
+      const newTraining = await response.json()
+      console.log('Training created successfully:', newTraining)
+      
+      // Close modal and reset form
       onOpenChange(false)
       form.reset()
       setStep(1)
+      
+      // Force reload to show the new training
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       console.error('Error creating training:', error)
+      alert('Errore nella creazione dell\'allenamento: ' + (error as Error).message)
     }
   }
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1)
+  const nextStep = async () => {
+    // Valida i campi del passo corrente prima di andare avanti
+    let fieldsToValidate: (keyof FormData)[] = [];
+    
+    if (step === 1) {
+      fieldsToValidate = ['date', 'startTime', 'duration', 'recurrence'];
+    } else if (step === 2) {
+      fieldsToValidate = ['location', 'type'];
+    }
+    
+    const isValid = await form.trigger(fieldsToValidate);
+    
+    if (isValid && step < 3) {
+      setStep(step + 1);
+    }
   }
 
   const prevStep = () => {
     if (step > 1) setStep(step - 1)
   }
+  
+  // Debug form errors
+  const formErrors = form.formState.errors;
+  console.log('Form errors:', formErrors);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Pianifica Allenamento</DialogTitle>
         </DialogHeader>
@@ -147,7 +215,16 @@ export function CreateTrainingModal({
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form 
+            onSubmit={form.handleSubmit(onSubmit)} 
+            className="space-y-6"
+            onKeyDown={(e) => {
+              // Previeni submit del form con Enter eccetto nell'ultimo step
+              if (e.key === 'Enter' && step < 3) {
+                e.preventDefault();
+              }
+            }}
+          >
             {step === 1 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -409,62 +486,27 @@ export function CreateTrainingModal({
                   Piano Allenamento (opzionale)
                 </h3>
 
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800">
+                    Il piano di allenamento è opzionale. Puoi aggiungerlo ora o modificare l'allenamento in seguito.
+                  </p>
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="useTemplate"
+                  name="plan"
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <div className="space-y-3">
-                          <div
-                            className={`p-3 rounded-lg border-2 cursor-pointer ${
-                              !field.value
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200'
-                            }`}
-                            onClick={() => field.onChange(false)}
-                          >
-                            <span className="font-medium">Piano vuoto</span>
-                            <p className="text-sm text-gray-600">
-                              Crea un nuovo piano da zero
-                            </p>
-                          </div>
-                          <div
-                            className={`p-3 rounded-lg border-2 cursor-pointer ${
-                              field.value
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200'
-                            }`}
-                            onClick={() => field.onChange(true)}
-                          >
-                            <span className="font-medium">Usa template salvato</span>
-                            <p className="text-sm text-gray-600">
-                              Seleziona da un template esistente
-                            </p>
-                          </div>
-                        </div>
+                        <TrainingPlanBuilder
+                          value={field.value}
+                          onChange={field.onChange}
+                          duration={parseInt(form.watch('duration') || '90')}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
                 />
-
-                {!form.watch('useTemplate') && (
-                  <FormField
-                    control={form.control}
-                    name="plan"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <TrainingPlanBuilder
-                            value={field.value}
-                            onChange={field.onChange}
-                            duration={parseInt(form.watch('duration') || '90')}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
 
                 <FormField
                   control={form.control}
@@ -486,7 +528,7 @@ export function CreateTrainingModal({
               </div>
             )}
 
-            <div className="flex justify-between pt-6">
+            <div className="flex justify-between pt-6 pb-4">
               <Button
                 type="button"
                 variant="outline"
@@ -501,11 +543,28 @@ export function CreateTrainingModal({
                 {step === 1 ? 'Annulla' : 'Indietro'}
               </Button>
               {step < 3 ? (
-                <Button type="button" onClick={nextStep}>
+                <Button 
+                  type="button" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    nextStep();
+                  }}
+                >
                   Avanti
                 </Button>
               ) : (
-                <Button type="submit">Crea Allenamento</Button>
+                <Button 
+                  type="submit" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={(e) => {
+                    console.log('Submit button clicked');
+                    console.log('Form is valid:', form.formState.isValid);
+                    console.log('Form values:', form.getValues());
+                  }}
+                >
+                  Salva Allenamento
+                </Button>
               )}
             </div>
           </form>

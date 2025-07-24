@@ -184,9 +184,57 @@ Questo errore indica che le tabelle non sono state sincronizzate nel database Su
 2. Esegui il push con il flag `--accept-data-loss`
 
 ```bash
-# Comando corretto per push database
+# Comando SEMPRE DA ESEGUIRE dopo modifiche allo schema
 DATABASE_URL="postgres://postgres.xxxxx:password@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" npx prisma db push --accept-data-loss
 ```
+
+## REGOLA IMPORTANTE: Database Push Automatico
+
+**OGNI volta che modifichi il file `prisma/schema.prisma` DEVI SEMPRE eseguire il push su Supabase:**
+
+1. **Dopo ogni modifica al schema Prisma:**
+   ```bash
+   # 1. Rigenera il client Prisma
+   npx prisma generate
+   
+   # 2. Push immediato su Supabase (USA SEMPRE la connessione diretta porta 5432)
+   DATABASE_URL="postgres://postgres.xxxxx:password@aws-0-eu-central-1.pooler.supabase.com:5432/postgres" npx prisma db push --accept-data-loss
+   
+   # 3. Riavvia il server se necessario
+   pnpm dev
+   ```
+
+2. **Verifica sempre che il push sia andato a buon fine** controllando su Supabase Dashboard o con:
+   ```bash
+   npx prisma studio
+   ```
+
+3. **Non lasciare mai il database locale/development diverso da quello production su Supabase**
+
+4. **Se ci sono conflitti, risolverli IMMEDIATAMENTE prima di continuare**
+
+## Regole di Integrità Referenziale Database
+
+Il database utilizza le seguenti regole di eliminazione a cascata per mantenere l'integrità:
+
+### onDelete: Cascade (Eliminazione a cascata)
+- **User → Team**: Se elimino un utente, si eliminano tutte le sue squadre
+- **Team → Player**: Se elimino una squadra, si eliminano tutti i giocatori
+- **Team → Training**: Se elimino una squadra, si eliminano tutti gli allenamenti
+- **Team → TeamAssistant**: Se elimino una squadra, si eliminano tutti gli assistenti
+- **Team → TeamInvite**: Se elimino una squadra, si eliminano tutti gli inviti
+- **Team → TeamCustomField**: Se elimino una squadra, si eliminano tutti i campi custom
+- **Training → Attendance**: Se elimino un allenamento, si eliminano tutte le presenze
+- **Player → MedicalRecord**: Se elimino un giocatore, si eliminano tutte le sue cartelle mediche
+
+### onDelete: SetNull (Imposta a NULL)
+- **Training → parentTraining**: Se elimino un allenamento padre, i figli perdono il riferimento
+- **TrainingTemplate → training**: Se elimino un allenamento, i template perdono il riferimento
+
+### Principi da Seguire:
+1. **Cascade per dati dipendenti**: Dati che non hanno senso senza il genitore
+2. **SetNull per riferimenti opzionali**: Riferimenti che possono esistere indipendentemente
+3. **Restrict per dati critici**: Mai implementato, preferiamo soft delete con flag `isDeleted`
 
 ### Problema: "Cannot read properties of undefined (reading 'findFirst')"
 Questo errore indica che il client Prisma non è aggiornato con i nuovi modelli.

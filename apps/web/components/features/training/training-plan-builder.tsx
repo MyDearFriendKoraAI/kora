@@ -194,8 +194,7 @@ function ExerciseForm({ exercise, onSave, onCancel }: ExerciseFormProps) {
     }
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = () => {
     if (formData.name.trim()) {
       onSave(formData)
     }
@@ -207,7 +206,7 @@ function ExerciseForm({ exercise, onSave, onCancel }: ExerciseFormProps) {
         <h3 className="text-lg font-semibold mb-4">
           {exercise ? 'Modifica' : 'Nuovo'} Esercizio
         </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <label className="text-sm font-medium">Nome esercizio</label>
             <Input
@@ -249,9 +248,9 @@ function ExerciseForm({ exercise, onSave, onCancel }: ExerciseFormProps) {
             <Button type="button" variant="outline" onClick={onCancel}>
               Annulla
             </Button>
-            <Button type="submit">Salva</Button>
+            <Button type="button" onClick={handleSave}>Salva</Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

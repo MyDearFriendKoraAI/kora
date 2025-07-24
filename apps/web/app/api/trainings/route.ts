@@ -12,12 +12,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
     }
 
+    console.log('User ID for trainings query:', user.id);
+
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 10;
     const sortBy = searchParams.get('sortBy') || 'date';
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' || 'asc';
     const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+
+    console.log('Query params:', { status, limit, sortBy, sortOrder, offset });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -28,6 +32,9 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    console.log('Today date:', today);
+    console.log('Where condition before date filter:', whereCondition);
+
     if (status === 'upcoming') {
       whereCondition.date = {
         gte: today
@@ -37,6 +44,8 @@ export async function GET(request: NextRequest) {
         lt: today
       };
     }
+
+    console.log('Final where condition:', JSON.stringify(whereCondition, null, 2));
 
     const [trainings, total] = await Promise.all([
       prisma.training.findMany({
@@ -67,6 +76,10 @@ export async function GET(request: NextRequest) {
         where: whereCondition
       })
     ]);
+
+    console.log('Found trainings count:', trainings.length);
+    console.log('Total trainings in database:', total);
+    console.log('First training (if any):', trainings[0]);
 
     return NextResponse.json({
       trainings: trainings || [],
