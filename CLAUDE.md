@@ -340,3 +340,243 @@ onSuccess: (result, variables) => {
 - Combina con `invalidateQueries` per mantenere i dati sincronizzati
 - Gestisci tutti i dati correlati (contatori, liste figlie, ecc.)
 - Implementa questo pattern per tutte le operazioni CRUD
+
+## Design System Sportivo Moderno - Linee Guida UI/UX
+
+### 🎨 Principi di Design
+Kora utilizza un design system moderno e sportivo che bilancia **energia** e **professionalità**.
+
+#### Mood e Personalità
+- **Energico**: Colori vivaci e animazioni fluide
+- **Professionale**: Layout puliti e tipografia leggibile  
+- **Sportivo**: Elementi visivi ispirati al mondo dello sport
+- **Mobile-First**: Ottimizzato per l'uso durante allenamenti
+
+### 🎯 Palette Colori Sportiva
+
+#### Primary - Blu Energico
+```css
+primary: {
+  50: '#e6f7ff',   // Sfondi chiari
+  500: '#1890ff',  // Colore principale
+  600: '#096dd9',  // Hover states
+  900: '#002766'   // Dark mode
+}
+```
+
+#### Secondary - Verde Campo
+```css
+secondary: {
+  50: '#f6ffed',   // Success backgrounds
+  500: '#52c41a',  // Conferme e positivi
+  700: '#237804'   // Active states
+}
+```
+
+#### Accent - Arancione Energia  
+```css
+accent: {
+  500: '#fa8c16',  // Call-to-action
+  600: '#d46b08'   // Highlights
+}
+```
+
+#### Sport-Specific Colors
+```css
+sport: {
+  soccer: '#52c41a',      // Verde calcio
+  basketball: '#fa8c16',  // Arancione basket
+  volleyball: '#1890ff',  // Blu volley
+  tennis: '#fadb14',      // Giallo tennis
+  swimming: '#13c2c2',    // Ciano nuoto
+  athletics: '#eb2f96',   // Rosa atletica
+  rugby: '#722ed1',       // Viola rugby
+  baseball: '#f5222d'     // Rosso baseball
+}
+```
+
+### 📝 Sistema Tipografico
+
+#### Font Stack
+```css
+font-sans: ['Inter', 'system-ui', 'sans-serif']     // Testo generale
+font-display: ['Bebas Neue', 'Inter', 'sans-serif'] // Titoli impact
+font-mono: ['JetBrains Mono', 'monospace']          // Codici/statistiche
+```
+
+#### Gerarchia
+- **Display**: Hero titles, numeri grandi (font-display)
+- **Headings**: Sezioni (font-sans, semibold/bold)  
+- **Body**: Paragrafi (font-sans, regular)
+- **Caption**: Metadati e note (font-sans, small)
+
+### 🧩 Componenti Base
+
+#### Button Sportivo
+```tsx
+// Uso delle utility classes
+<button className="btn-primary">       // Gradiente blu
+<button className="btn-secondary">     // Gradiente verde  
+<button className="btn-sport">         // Gradiente arcobaleno
+```
+
+#### Card Sportiva
+```tsx
+// Card con glassmorphism
+<div className="sport-card">           // Sfondo vetro + blur
+<div className="stat-card">            // Per statistiche con gradiente
+```
+
+#### Input Moderni  
+```tsx
+<input className="input-sport" />      // Input arrotondati con focus animato
+```
+
+### ✨ Animazioni e Micro-Interazioni
+
+#### Principi Animazione
+- **Duration**: 300ms standard, 150ms per micro-interazioni
+- **Easing**: `cubic-bezier(0.4, 0, 0.2, 1)` per fluidità
+- **Hover**: Scale leggeri (1.02-1.05), non eccessivi
+- **Loading**: Skeleton shimmer, spinner colorati
+
+#### Utility Classes Animate
+```css
+.hover-lift         // Sollevamento al hover
+.hover-glow         // Ombra luminosa al hover  
+.animate-float      // Fluttuazione continua
+.animate-bounce-in  // Entrata elastica
+.animate-shimmer    // Loading effect
+```
+
+### 📱 Mobile-First Guidelines
+
+#### Touch Targets
+- **Minimum Size**: 44px x 44px (standard iOS/Android)
+- **Padding**: Generoso intorno a elementi interattivi
+- **Spacing**: 16px minimum tra elementi toccabili
+
+#### Responsive Breakpoints
+```css
+sm: '640px',   // Mobile large
+md: '768px',   // Tablet  
+lg: '1024px',  // Desktop
+xl: '1280px'   // Desktop large
+```
+
+#### Safe Areas iOS
+```css
+.safe-top     // padding-top: env(safe-area-inset-top)
+.safe-bottom  // padding-bottom: env(safe-area-inset-bottom)  
+.pb-safe      // Solo bottom padding
+```
+
+### 🎭 Accessibility (WCAG 2.1 AA)
+
+#### Focus Management
+- **Focus Ring**: Ring blu 2px con offset
+- **Keyboard Navigation**: Tab order logico
+- **Skip Links**: Per navigation rapida
+
+#### Contrast Standards
+- **Normal Text**: 4.5:1 minimum contrast
+- **Large Text**: 3:1 minimum contrast  
+- **Interactive Elements**: Focus indicators visibili
+
+#### Screen Readers
+```tsx
+// ARIA labels obbligatori
+<button aria-label="Elimina squadra">
+<input aria-describedby="error-message">
+```
+
+### 🔧 Utility Classes Personalizzate
+
+#### Glassmorphism
+```css
+.glass              // Effetto vetro chiaro
+.glass-dark         // Effetto vetro scuro
+.glass-effect       // Backdrop blur completo
+```
+
+#### Gradient Utils
+```css
+.bg-gradient-sport  // Gradiente primary→accent  
+.bg-gradient-field  // Gradiente verde campo
+.text-gradient      // Testo con gradiente
+```
+
+#### Effetti Performance
+```css
+.gpu-accelerated    // Ottimizzazione GPU
+.field-pattern      // Pattern campo sportivo
+```
+
+### 🚀 Best Practices Implementazione
+
+#### Component Structure
+```tsx
+// Sempre seguire questo pattern
+'use client';                    // Per interattività
+import { cn } from '@kora/shared/utils';  // Utility class merge
+import { useState, useEffect } from 'react';
+import { Lucide Icons } from 'lucide-react';
+```
+
+#### Naming Conventions
+```tsx
+// File: ComponentNameModern.tsx
+export function ComponentNameModern({
+  variant = "primary",           // Props con default
+  size = "md", 
+  className,                     // Sempre accettare className custom
+  ...props 
+}: ComponentProps) {
+  return (
+    <div className={cn(
+      "base-classes",              // Classi base sempre prime
+      variants[variant],           // Varianti dinamiche  
+      sizes[size],
+      className                    // User override sempre ultimo
+    )}>
+```
+
+#### Performance
+```tsx
+// Lazy loading componenti pesanti
+const HeavyChart = lazy(() => import('./HeavyChart'));
+
+// Optimistic updates per feedback immediato
+const { mutate } = useMutation({
+  onMutate: () => {
+    // Update UI immediately
+  }
+});
+```
+
+### 📋 Checklist Pre-Release
+
+#### Design Review
+- [ ] Responsive su 320px-1920px
+- [ ] Touch targets ≥44px  
+- [ ] Contrast ratio ≥4.5:1
+- [ ] Animazioni fluide <300ms
+- [ ] Dark mode compatibile
+
+#### Code Quality
+- [ ] TypeScript strict mode
+- [ ] Component props documented  
+- [ ] Accessibility attributes
+- [ ] Performance optimized
+- [ ] Cross-browser tested
+
+### 🎯 Componenti Prioritari Redesignati
+
+1. ✅ **DashboardHero** - Hero section con statistiche animate
+2. ✅ **TeamCardModern** - Card squadre con glassmorphism  
+3. ✅ **ButtonModern** - Sistema button completo
+4. ⏳ **PlayerCard** - Card giocatori stile gaming
+5. ⏳ **TrainingCalendar** - Calendario con drag & drop
+6. ⏳ **AIChatInterface** - Chat moderna stile ChatGPT
+
+Seguire sempre queste linee guida per mantenere consistenza e qualità nel design system sportivo di Kora.

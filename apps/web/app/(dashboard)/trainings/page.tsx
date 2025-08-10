@@ -84,7 +84,7 @@ export default function TrainingsPage() {
   const firstTeamId = teams?.[0]?.id || "";
   const upcomingTrainingsQuery = useUpcomingTrainings();
   
-  const trainings = upcomingTrainingsQuery.data || [];
+  const trainings = Array.isArray(upcomingTrainingsQuery.data) ? upcomingTrainingsQuery.data : (upcomingTrainingsQuery.data?.trainings || []);
   const isLoading = upcomingTrainingsQuery.isLoading;
   
   // Calcola le statistiche mensili

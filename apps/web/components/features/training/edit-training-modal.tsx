@@ -102,12 +102,24 @@ export function EditTrainingModal({
       const combinedDate = new Date(data.date)
       combinedDate.setHours(hours, minutes, 0, 0)
 
+      // Map training types to API format
+      const typeMapping: Record<string, 'training' | 'match' | 'friendly'> = {
+        'REGULAR': 'training',
+        'MATCH_PREP': 'training',
+        'RECOVERY': 'training',
+        'TACTICAL': 'training',
+        'TECHNICAL': 'training',
+        'PHYSICAL': 'training',
+        'MATCH': 'match',
+        'FRIENDLY': 'friendly'
+      };
+
       // Prepara i dati per l'aggiornamento
       const updateData = {
         date: combinedDate.toISOString(),
         startTime: data.startTime,
         duration: parseInt(data.duration),
-        type: data.type,
+        type: typeMapping[data.type] || 'training',
         location: data.location,
         plannedPlayers: data.plannedPlayers,
       }
