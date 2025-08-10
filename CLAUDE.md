@@ -263,3 +263,80 @@ DATABASE_URL="postgres://postgres.xxxxx:password@aws-0-eu-central-1.pooler.supab
 # 4. Riavvia dev server
 pnpm dev
 ```
+
+## React Query - Aggiornamento Cache dopo Operazioni CRUD
+
+### Problema: Dati non aggiornati dopo eliminazione/modifica
+Quando si elimina o modifica un'entità (es. squadra, giocatore), i dati potrebbero rimanere visibili nella UI anche dopo l'operazione completata con successo, richiedendo un refresh manuale della pagina.
+
+### Soluzione: Aggiornamento Immediato della Cache
+Utilizzare `setQueryData` di React Query per aggiornare immediatamente la cache locale prima che il refetch avvenga.
+
+#### Esempio: Eliminazione Squadra con Aggiornamento Immediato
+
+```typescript
+// hooks/queries/useTeams.ts
+export function useDeleteTeam() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ teamId, data }) => deleteTeamAction(teamId, data),
+    onSuccess: (result, variables) => {
+      if (result?.success) {
+        // 1. RIMUOVI IMMEDIATAMENTE dalla cache (update ottimistico)
+        queryClient.setQueryData(queryKeys.teams.lists(), (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.filter((team) => team.id !== variables.teamId);
+        });
+        
+        // 2. Aggiorna contatori correlati
+        queryClient.setQueryData([...queryKeys.teams.all(), 'count'], (oldCount) => {
+          return Math.max(0, (oldCount || 1) - 1);
+        });
+        
+        // 3. Rimuovi query specifiche del team eliminato
+        queryClient.removeQueries({ queryKey: queryKeys.teams.detail(variables.teamId) });
+        queryClient.removeQueries({ queryKey: queryKeys.teams.players(variables.teamId) });
+        queryClient.removeQueries({ queryKey: queryKeys.teams.trainings(variables.teamId) });
+        
+        // 4. Invalida per refresh futuro (background)
+        queryClient.invalidateQueries({ queryKey: queryKeys.teams.lists() });
+        
+        toast.success('Squadra eliminata con successo!');
+      }
+    },
+  });
+}
+```
+
+#### Principi Chiave:
+1. **`setQueryData` per aggiornamenti immediati**: Modifica direttamente la cache per riflettere istantaneamente i cambiamenti nella UI
+2. **`removeQueries` per pulizia**: Rimuove dati obsoleti dalla cache per entità eliminate
+3. **`invalidateQueries` per sincronizzazione**: Garantisce che i dati vengano ricaricati dal server in background
+4. **Aggiornamento di tutte le query correlate**: Non dimenticare contatori, liste associate, ecc.
+
+#### Pattern per altre operazioni:
+
+**Creazione:**
+```typescript
+onSuccess: (result) => {
+  // Aggiungi il nuovo item alla lista
+  queryClient.setQueryData(queryKeys.teams.lists(), (old) => [...(old || []), result.data]);
+}
+```
+
+**Modifica:**
+```typescript
+onSuccess: (result, variables) => {
+  // Aggiorna l'item nella lista
+  queryClient.setQueryData(queryKeys.teams.lists(), (old) => 
+    old?.map(item => item.id === variables.id ? result.data : item)
+  );
+}
+```
+
+### Best Practices:
+- Usa sempre `setQueryData` per aggiornamenti immediati dell'UI
+- Combina con `invalidateQueries` per mantenere i dati sincronizzati
+- Gestisci tutti i dati correlati (contatori, liste figlie, ecc.)
+- Implementa questo pattern per tutte le operazioni CRUD

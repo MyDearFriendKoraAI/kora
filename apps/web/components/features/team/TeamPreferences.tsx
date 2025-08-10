@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Team } from '@/lib/supabase/team';
 import { DeleteTeamModal } from './DeleteTeamModal';
-import { useTeamStore } from '@/stores/team-store';
-import { getUserTeamsAction } from '@/app/actions/team';
+import { useDeleteTeam } from '@/hooks/queries/useTeams';
 
 interface Preferences {
   notifications: {
@@ -82,21 +81,10 @@ export function TeamPreferences({ team, onUpdate }: TeamPreferencesProps) {
     }
   };
 
-  const { setUserTeams } = useTeamStore();
+  const deleteTeam = useDeleteTeam();
 
-  const handleTeamDeleted = async () => {
+  const handleTeamDeleted = () => {
     setShowDeleteModal(false);
-    
-    // Refresh teams in store to remove deleted team immediately
-    try {
-      const result = await getUserTeamsAction();
-      if (result.success && result.teams) {
-        setUserTeams(result.teams);
-      }
-    } catch (error) {
-      console.error('Error refreshing teams:', error);
-    }
-    
     router.push('/teams');
   };
 

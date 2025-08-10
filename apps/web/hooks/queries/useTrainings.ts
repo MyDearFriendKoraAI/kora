@@ -282,7 +282,9 @@ export function useUpcomingTrainings(teamId?: string, limit = 5) {
       }
       
       const data = await response.json();
-      return data.trainings || []; // Restituisci solo l'array di trainings
+      // Se data è già un array, restituiscilo direttamente
+      // Altrimenti prova data.trainings o restituisci array vuoto
+      return Array.isArray(data) ? data : (data?.trainings || [])
     },
     staleTime: QUERY_STALE_TIMES.trainings,
     retry: false, // Disabilita retry per questo hook

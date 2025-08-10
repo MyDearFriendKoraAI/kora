@@ -126,12 +126,23 @@ export function useDeleteTeam() {
     mutationFn: ({ teamId, data }: { teamId: string; data: any }) => deleteTeamAction(teamId, data),
     onSuccess: (result, variables) => {
       if (result?.success) {
+        // Rimuovi immediatamente la squadra dalla lista in cache
+        queryClient.setQueryData(queryKeys.teams.lists(), (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.filter((team: any) => team.id !== variables.teamId);
+        });
+        
+        // Aggiorna il conteggio
+        queryClient.setQueryData([...queryKeys.teams.all(), 'count'], (oldCount: number) => {
+          return Math.max(0, (oldCount || 1) - 1);
+        });
+        
         // Rimuovi dai cache tutte le queries correlate al team
         queryClient.removeQueries({ queryKey: queryKeys.teams.detail(variables.teamId) });
         queryClient.removeQueries({ queryKey: queryKeys.teams.players(variables.teamId) });
         queryClient.removeQueries({ queryKey: queryKeys.teams.trainings(variables.teamId) });
         
-        // Invalida lists
+        // Invalida per assicurarsi che i dati siano freschi al prossimo fetch
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.lists() });
         queryClient.invalidateQueries({ queryKey: [...queryKeys.teams.all(), 'count'] });
         

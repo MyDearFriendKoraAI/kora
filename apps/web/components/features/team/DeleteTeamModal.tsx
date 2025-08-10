@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -12,7 +11,7 @@ import {
   deleteTeamSchema, 
   DeleteTeamFormData 
 } from '@/lib/validations/team';
-import { deleteTeamAction } from '@/app/actions/team';
+import { useDeleteTeam } from '@/hooks/queries/useTeams';
 
 interface DeleteTeamModalProps {
   team: Team;
@@ -22,7 +21,7 @@ interface DeleteTeamModalProps {
 }
 
 export function DeleteTeamModal({ team, isOpen, onClose, onDeleted }: DeleteTeamModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const deleteTeam = useDeleteTeam();
 
   const {
     register,
@@ -36,27 +35,20 @@ export function DeleteTeamModal({ team, isOpen, onClose, onDeleted }: DeleteTeam
 
   const confirmName = watch('confirmName');
   const canDelete = confirmName === team.name;
+  const isLoading = deleteTeam.isPending;
 
   const onSubmit = async (data: DeleteTeamFormData) => {
-    try {
-      setIsLoading(true);
-      const result = await deleteTeamAction(team.id, data);
-
-      if (result?.error) {
-        toast.error(result.error);
-        return;
+    deleteTeam.mutate(
+      { teamId: team.id, data },
+      {
+        onSuccess: (result) => {
+          if (result?.success) {
+            onDeleted();
+            onClose();
+          }
+        },
       }
-
-      if (result?.success) {
-        toast.success(result.message);
-        onDeleted();
-        onClose();
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Errore durante l\'eliminazione');
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   const handleClose = () => {

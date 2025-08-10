@@ -84,12 +84,12 @@ export default function TrainingsPage() {
   const firstTeamId = teams?.[0]?.id || "";
   const upcomingTrainingsQuery = useUpcomingTrainings();
   
-  const trainings = upcomingTrainingsQuery.data;
+  const trainings = upcomingTrainingsQuery.data || [];
   const isLoading = upcomingTrainingsQuery.isLoading;
   
   // Calcola le statistiche mensili
   const monthlyStats = React.useMemo(() => {
-    if (!trainings || trainings.length === 0) {
+    if (!trainings || !Array.isArray(trainings) || trainings.length === 0) {
       return {
         totalTrainings: 0,
         averageAttendance: 0,
