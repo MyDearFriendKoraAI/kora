@@ -298,7 +298,7 @@ function QuickActions({ team }: { team: any }) {
       title: "Pianifica Allenamenti",
       description: "Crea e gestisci sessioni",
       color: "bg-green-500",
-      href: `/teams/${team.id}/trainings`
+      href: '/trainings'
     },
     {
       icon: TrendingUp,

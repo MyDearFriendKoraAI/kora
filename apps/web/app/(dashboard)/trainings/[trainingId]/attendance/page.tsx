@@ -29,6 +29,7 @@ import { QuickMarkButtons } from '@/components/features/attendance/quick-mark-bu
 import { AbsenceJustificationModal } from '@/components/features/attendance/absence-justification-modal'
 import { AttendanceDetailModal } from '@/components/features/attendance/attendance-detail-modal'
 import { QRCheckInModal } from '@/components/features/attendance/qr-checkin-modal'
+import { useActiveTeamOperations } from '@/hooks/queries/useActiveTeam'
 
 interface Player {
   id: string
@@ -63,7 +64,7 @@ interface Training {
 export default function AttendancePage() {
   const params = useParams()
   const router = useRouter()
-  const teamId = params.id as string
+  const { activeTeam } = useActiveTeamOperations();
   const trainingId = params.trainingId as string
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -84,11 +85,13 @@ export default function AttendancePage() {
 
   // Carica dati dal database
   const fetchAttendanceData = async () => {
+    if (!activeTeam) return;
+    
     try {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/teams/${teamId}/trainings/${trainingId}/attendance`)
+      const response = await fetch(`/api/teams/${activeTeam.id}/trainings/${trainingId}/attendance`)
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -107,8 +110,10 @@ export default function AttendancePage() {
   }
 
   useEffect(() => {
-    fetchAttendanceData()
-  }, [teamId, trainingId])
+    if (activeTeam) {
+      fetchAttendanceData()
+    }
+  }, [activeTeam, trainingId])
 
   useEffect(() => {
     // Auto-hide undo dopo 5 secondi
@@ -187,8 +192,10 @@ export default function AttendancePage() {
   }
 
   const saveAttendance = async (playerId: string, status: AttendanceStatus, additionalData?: Partial<AttendanceRecord>) => {
+    if (!activeTeam) return;
+    
     try {
-      const response = await fetch(`/api/teams/${teamId}/trainings/${trainingId}/attendance`, {
+      const response = await fetch(`/api/teams/${activeTeam.id}/trainings/${trainingId}/attendance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,6 +233,27 @@ export default function AttendancePage() {
     }
   }
 
+  // Show message if no active team
+  if (!activeTeam) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
+              <UsersIcon className="w-8 h-8 text-neutral-400" />
+            </div>
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+              Seleziona una squadra
+            </h2>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Crea una squadra per gestire le presenze degli allenamenti
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -246,7 +274,7 @@ export default function AttendancePage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/teams/${teamId}/trainings/${trainingId}`)}
+            onClick={() => router.push(`/trainings/${trainingId}`)}
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Indietro
@@ -279,7 +307,7 @@ export default function AttendancePage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/teams/${teamId}/trainings/${trainingId}`)}
+            onClick={() => router.push(`/trainings/${trainingId}`)}
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Indietro
@@ -287,7 +315,7 @@ export default function AttendancePage() {
           <div>
             <h1 className="text-2xl font-bold">Presenze Allenamento</h1>
             <p className="text-gray-600">
-              {training.type} • {format(new Date(training.date), 'EEEE d MMMM yyyy, HH:mm', { locale: it })}
+              {activeTeam.name} • {training.type} • {format(new Date(training.date), 'EEEE d MMMM yyyy, HH:mm', { locale: it })}
             </p>
           </div>
         </div>

@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { TrainingType, TrainingStatus } from '@prisma/client'
 import { AttendanceModal } from '@/components/features/training/attendance-modal'
+import { useActiveTeamOperations } from '@/hooks/queries/useActiveTeam'
 
 const typeLabels: Record<TrainingType, string> = {
   REGULAR: 'Allenamento Regolare',
@@ -86,7 +87,7 @@ interface TrainingDetail {
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const teamId = params.id as string
+  const { activeTeam } = useActiveTeamOperations();
   const trainingId = params.trainingId as string
   
   const [showAttendanceModal, setShowAttendanceModal] = useState(false)
@@ -173,15 +174,39 @@ export default function TrainingDetailPage() {
     setEditingNotes(false)
   }
 
+  // Show message if no active team
+  if (!activeTeam) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
+            <CalendarIcon className="w-8 h-8 text-neutral-400" />
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+            Seleziona una squadra
+          </h2>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Crea una squadra per visualizzare i dettagli degli allenamenti
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/teams/${teamId}/trainings`)}
+          onClick={() => router.push('/trainings')}
         >
           ← Torna agli allenamenti
         </Button>
+        <div className="mt-2">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            {activeTeam.name} • {activeTeam.sport}
+          </p>
+        </div>
       </div>
 
       {/* Header */}
@@ -491,7 +516,7 @@ export default function TrainingDetailPage() {
         open={showAttendanceModal}
         onOpenChange={setShowAttendanceModal}
         trainingId={trainingId}
-        teamId={teamId}
+        teamId={activeTeam?.id || ''}
       />
     </div>
   )

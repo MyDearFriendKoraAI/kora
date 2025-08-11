@@ -146,7 +146,7 @@ export default function DashboardPage() {
         ? `${upcomingTrainings.length} prossimi eventi`
         : "Nessun evento programmato",
       color: "bg-green-500",
-      href: primaryTeam ? `/teams/${primaryTeam.id}/trainings` : '/teams'
+      href: '/trainings'
     },
     {
       icon: MessageSquare,

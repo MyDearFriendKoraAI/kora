@@ -102,7 +102,8 @@ export default function NewTeamPage() {
       });
 
       if (result?.success && result.teamId) {
-        router.push(`/teams/${result.teamId}`);
+        // Con il nuovo sistema single-team, redirect alla dashboard della squadra
+        router.push('/teams');
       }
     } catch (error: any) {
       // Error handling is already done in the mutation

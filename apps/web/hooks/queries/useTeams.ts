@@ -69,6 +69,20 @@ export function useCreateTeam() {
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.lists() });
         queryClient.invalidateQueries({ queryKey: [...queryKeys.teams.all(), 'count'] });
         
+        // CRITICAL: Invalida active team queries per aggiornare menu e dashboard
+        queryClient.invalidateQueries({ queryKey: ['activeTeam'] });
+        
+        // Invalida anche le query user access che dipendono da hasTeams
+        queryClient.invalidateQueries({ queryKey: ['userAccess'] });
+        
+        // Update ottimistico: se è la prima squadra, impostala come attiva immediatamente
+        const currentTeams = queryClient.getQueryData(queryKeys.teams.lists()) as any[] || [];
+        if (currentTeams.length === 0 && result.teamData) {
+          // Prima squadra creata - aggiorna subito l'active team per UI reattiva
+          queryClient.setQueryData(['activeTeam', 'current'], result.teamData);
+          queryClient.setQueryData(['activeTeam', 'available'], [result.teamData]);
+        }
+        
         toast.success('Squadra creata con successo!');
         
         // Prefetch dei dettagli della nuova squadra se abbiamo l'ID
