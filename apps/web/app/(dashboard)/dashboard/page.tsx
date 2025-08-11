@@ -1,10 +1,12 @@
 'use client';
 
 import { DashboardHero } from '@/components/features/dashboard/DashboardHero';
+import { InvitePopup } from '@/components/features/team/InvitePopup';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeams } from '@/hooks/queries/useTeams';
 import { useUpcomingTrainings } from '@/hooks/queries/useTrainings';
 import { usePlayers } from '@/hooks/queries/usePlayers';
+import { usePendingInvites } from '@/hooks/queries/useTeamInvites';
 import { 
   Calendar, Users, TrendingUp, MessageSquare, 
   Target, Award, Clock, BarChart3, Loader2 
@@ -94,6 +96,7 @@ function ActivityItem({
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { teams, isLoading: teamsLoading, error: teamsError, refetch: refetchTeams } = useTeams();
+  const { data: invites = [] } = usePendingInvites();
   
   // Get primary team data
   const primaryTeam = teams?.[0];
@@ -244,6 +247,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-safe">
+      {/* Popup Inviti */}
+      {invites.length > 0 && (
+        <InvitePopup showOnMount={true} />
+      )}
+      
       {/* Hero Section */}
       <DashboardHero
         userName={user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Coach'}

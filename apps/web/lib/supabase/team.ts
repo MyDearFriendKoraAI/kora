@@ -291,6 +291,54 @@ export async function uploadTeamLogo(teamId: string, file: File, userId: string)
   }
 }
 
+// Get teams where user is assistant
+export async function getTeamsWhereUserIsAssistant(userId: string): Promise<Team[]> {
+  try {
+    const assistantTeams = await prisma.teamAssistant.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        team: {
+          include: {
+            _count: {
+              select: {
+                players: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        joinedAt: 'desc',
+      },
+    });
+
+    return assistantTeams
+      .filter(at => !at.team.isDeleted)
+      .map((at) => ({
+        id: at.team.id,
+        name: at.team.name,
+        sport: at.team.sport as SportTypeEnum,
+        category: at.team.category || undefined,
+        season: at.team.season,
+        homeField: at.team.homeField || undefined,
+        colors: at.team.colors as { primary: string; secondary: string } | undefined,
+        logo: at.team.logo || undefined,
+        coachId: at.team.coachId,
+        isDeleted: at.team.isDeleted,
+        createdAt: at.team.createdAt.toISOString(),
+        updatedAt: at.team.updatedAt.toISOString(),
+        _count: {
+          players: at.team._count.players,
+        },
+      }));
+  } catch (error) {
+    console.error('Error fetching assistant teams:', error);
+    return [];
+  }
+}
+
 // Helper to get team statistics
 export async function getTeamStats(teamId: string, userId: string) {
   try {

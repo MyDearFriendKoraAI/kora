@@ -7,6 +7,8 @@ import { UserMenu } from "@/components/features/auth/UserMenu";
 import { TeamSwitcher } from "@/components/features/team/TeamSwitcher";
 import { useTeams } from "@/hooks/queries/useTeams";
 import { usePrefetch } from "@/hooks/queries/usePrefetch";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { Shield, Lock } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -18,6 +20,14 @@ export default function DashboardLayout({
   // Load user teams data with React Query
   const { teams, isLoading } = useTeams();
   
+  // Check user access permissions
+  const { 
+    canAccessTeams, 
+    canAccessTrainings, 
+    canAccessAICoach,
+    hasTeams 
+  } = useUserAccess();
+  
   // Setup prefetching
   const { warmUpCache } = usePrefetch();
   
@@ -27,10 +37,30 @@ export default function DashboardLayout({
   }, []);
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Squadre", href: "/teams" },
-    { name: "Allenamenti", href: "/trainings" },
-    { name: "AI Coach", href: "/ai-coach" },
+    { 
+      name: "Dashboard", 
+      href: "/dashboard",
+      enabled: true,
+      tooltip: null
+    },
+    { 
+      name: "Squadre", 
+      href: "/teams",
+      enabled: canAccessTeams,
+      tooltip: null
+    },
+    { 
+      name: "Allenamenti", 
+      href: "/trainings",
+      enabled: canAccessTrainings,
+      tooltip: !canAccessTrainings ? "Crea prima una squadra per accedere agli allenamenti" : null
+    },
+    { 
+      name: "AI Coach", 
+      href: "/ai-coach",
+      enabled: canAccessAICoach,
+      tooltip: !canAccessAICoach ? "Crea prima una squadra per utilizzare l'AI Coach" : null
+    },
   ];
 
   return (
@@ -64,6 +94,27 @@ export default function DashboardLayout({
               <nav className="flex-1 px-2 space-y-1">
                 {navigation.map((item) => {
                   const isActive = pathname === item.href;
+                  
+                  if (!item.enabled) {
+                    return (
+                      <div
+                        key={item.name}
+                        className="group flex items-center justify-between px-2 py-2 text-sm font-medium border-l-4 border-transparent text-gray-400 cursor-not-allowed relative"
+                        title={item.tooltip || undefined}
+                      >
+                        <span className="flex items-center gap-2">
+                          {item.name}
+                          <Lock className="w-3 h-3" />
+                        </span>
+                        {item.tooltip && (
+                          <div className="hidden group-hover:block absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap z-50">
+                            {item.tooltip}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  
                   return (
                     <Link
                       key={item.name}
@@ -103,6 +154,21 @@ export default function DashboardLayout({
         <div className="grid grid-cols-4 py-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
+            
+            if (!item.enabled) {
+              return (
+                <div
+                  key={item.name}
+                  className="flex flex-col items-center py-2 text-xs text-gray-300 cursor-not-allowed"
+                >
+                  <div className="w-6 h-6 mb-1 bg-current opacity-10 rounded relative">
+                    <Lock className="w-3 h-3 absolute inset-0 m-auto" />
+                  </div>
+                  {item.name}
+                </div>
+              );
+            }
+            
             return (
               <Link
                 key={item.name}

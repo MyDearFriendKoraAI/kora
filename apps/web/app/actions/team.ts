@@ -260,14 +260,21 @@ export async function getUserTeamsAction() {
     // Get teams where user is owner
     const ownedTeams = await getTeamsByUserId(user.id);
     
-    // TODO: Get teams where user is assistant (when vice allenatori is ready)
-    // const assistantTeams = await getTeamsWhereUserIsAssistant(user.id);
+    // Get teams where user is assistant
+    const { getTeamsWhereUserIsAssistant } = await import('@/lib/supabase/team');
+    const assistantTeams = await getTeamsWhereUserIsAssistant(user.id);
     
-    // For now, just return owned teams
-    const allTeams = ownedTeams.map(team => ({
-      ...team,
-      userRole: 'owner' as const,
-    }));
+    // Combine and mark user role
+    const allTeams = [
+      ...ownedTeams.map(team => ({
+        ...team,
+        role: 'owner' as const,
+      })),
+      ...assistantTeams.map(team => ({
+        ...team,
+        role: 'assistant' as const,
+      }))
+    ];
 
     return {
       success: true,

@@ -10,6 +10,7 @@ import { ButtonModern } from '@/components/ui/ButtonModern';
 import { SportIcon } from '@/components/features/team/SportIcon';
 import { useTeamLimit } from '@/hooks/useTeamLimit';
 import { useTeams } from '@/hooks/queries/useTeams';
+import { usePendingInvites, useHandleInvite } from '@/hooks/queries/useTeamInvites';
 import { SPORT_LABELS, SportTypeEnum } from '@/lib/validations/team';
 import { cn } from '@kora/shared/utils';
 
@@ -47,9 +48,9 @@ function TeamsPageHeader() {
   const { teams } = useTeams();
   const { isAtLimit } = useTeamLimit();
   
-  // Mock data - in produzione verrebbero da API
-  const ownerTeams = teams.filter(() => true); // Tutte owner per ora
-  const assistantTeams: any[] = []; // Mock vice allenatore teams
+  // Separa squadre per ruolo
+  const ownerTeams = teams.filter((team: any) => team.role === 'owner');
+  const assistantTeams = teams.filter((team: any) => team.role === 'assistant');
 
   return (
     <div className="mb-12">
@@ -285,19 +286,33 @@ function TeamCard({ team, role = 'owner' }: { team: any; role?: 'owner' | 'assis
 
 // Pending Invites Section
 function PendingInvites() {
-  // Mock invites data - in produzione da API
-  const invites = [
-    {
-      id: '1',
-      teamName: 'Juventus Under 17',
-      inviterName: 'Marco Bianchi',
-      role: 'Vice Allenatore',
-      expiresIn: '3 giorni',
-      sport: 'soccer'
-    }
-  ];
+  const { data: invites = [], isLoading } = usePendingInvites();
+  const handleInvite = useHandleInvite();
+
+  if (isLoading) {
+    return (
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
+          <Clock className="w-6 h-6 text-amber-500" />
+          Inviti in Sospeso
+        </h2>
+        <div className="animate-pulse bg-neutral-200 dark:bg-neutral-800 h-32 rounded-2xl" />
+      </div>
+    );
+  }
 
   if (invites.length === 0) return null;
+
+  // Calcola giorni rimanenti
+  const calculateDaysRemaining = (expiresAt: string) => {
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const days = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (days <= 0) return 'Scaduto';
+    if (days === 1) return '1 giorno';
+    return `${days} giorni`;
+  };
 
   return (
     <div className="mb-12">
@@ -307,7 +322,7 @@ function PendingInvites() {
       </h2>
       
       <div className="grid gap-4">
-        {invites.map((invite) => (
+        {invites.map((invite: any) => (
           <div
             key={invite.id}
             className={cn(
@@ -319,20 +334,25 @@ function PendingInvites() {
           >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
-                <SportIcon sport={invite.sport as SportTypeEnum} size="md" className="w-6 h-6 text-amber-600" />
+                <SportIcon sport={invite.team.sport as SportTypeEnum} size="md" className="w-6 h-6 text-amber-600" />
               </div>
               
               <div>
                 <h3 className="font-bold text-neutral-900 dark:text-white">
-                  {invite.teamName}
+                  {invite.team.name}
                 </h3>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="font-medium">{invite.inviterName}</span> ti invita come{' '}
-                  <span className="font-medium text-purple-600">{invite.role}</span>
+                  <span className="font-medium">{invite.inviter.nome} {invite.inviter.cognome}</span> ti invita come{' '}
+                  <span className="font-medium text-purple-600">Vice Allenatore</span>
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  Scade tra {invite.expiresIn}
+                  Scade tra {calculateDaysRemaining(invite.expiresAt)}
                 </p>
+                {invite.message && (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1 italic">
+                    "{invite.message}"
+                  </p>
+                )}
               </div>
             </div>
             
@@ -341,12 +361,16 @@ function PendingInvites() {
                 variant="outline"
                 size="sm"
                 className="text-neutral-600 border-neutral-300"
+                onClick={() => handleInvite.mutate({ inviteId: invite.id, action: 'reject' })}
+                disabled={handleInvite.isPending}
               >
                 Rifiuta
               </ButtonModern>
               <ButtonModern
                 variant="primary"
                 size="sm"
+                onClick={() => handleInvite.mutate({ inviteId: invite.id, action: 'accept' })}
+                disabled={handleInvite.isPending}
               >
                 Accetta
               </ButtonModern>
@@ -465,18 +489,43 @@ function TeamsGrid() {
     return <EmptyTeamsState />;
   }
 
+  // Separa squadre per ruolo
+  const ownerTeams = teams.filter((team: any) => team.role === 'owner');
+  const assistantTeams = teams.filter((team: any) => team.role === 'assistant');
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-8 flex items-center gap-2">
-        <Award className="w-6 h-6 text-primary-500" />
-        Le Tue Squadre
-      </h2>
-      
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {teams.map((team: any) => (
-          <TeamCard key={team.id} team={team} role="owner" />
-        ))}
-      </div>
+    <div className="space-y-12">
+      {/* Squadre come proprietario */}
+      {ownerTeams.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-8 flex items-center gap-2">
+            <Crown className="w-6 h-6 text-amber-500" />
+            Le Mie Squadre
+          </h2>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {ownerTeams.map((team: any) => (
+              <TeamCard key={team.id} team={team} role="owner" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Squadre come vice allenatore */}
+      {assistantTeams.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-8 flex items-center gap-2">
+            <Shield className="w-6 h-6 text-purple-500" />
+            Squadre come Vice Allenatore
+          </h2>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {assistantTeams.map((team: any) => (
+              <TeamCard key={team.id} team={team} role="assistant" />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
