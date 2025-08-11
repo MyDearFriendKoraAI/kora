@@ -16,6 +16,7 @@ model User {
   bio               String?
   avatarUrl         String?
   tier              UserTier        @default(FREE)
+  activeTeamId      String?         // ID della squadra attualmente visualizzata
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   conversations     Conversation[]
@@ -24,6 +25,7 @@ model User {
   assistantTeams    TeamAssistant[]
   sentInvites       TeamInvite[]    @relation("InviterUser")
   imports           ImportHistory[]
+  activeTeam        Team?           @relation("UserActiveTeam", fields: [activeTeamId], references: [id], onDelete: SetNull)
 
   @@map("users")
 }
@@ -49,6 +51,7 @@ model Team {
   customFields TeamCustomField[]
   imports      ImportHistory[]
   templates    TrainingTemplate[]
+  activeUsers  User[]            @relation("UserActiveTeam")
 
   @@map("teams")
 }

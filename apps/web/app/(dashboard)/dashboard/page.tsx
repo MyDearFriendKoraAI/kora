@@ -3,13 +3,13 @@
 import { DashboardHero } from '@/components/features/dashboard/DashboardHero';
 import { InvitePopup } from '@/components/features/team/InvitePopup';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeams } from '@/hooks/queries/useTeams';
+import { useActiveTeamOperations } from '@/hooks/queries/useActiveTeam';
 import { useUpcomingTrainings } from '@/hooks/queries/useTrainings';
 import { usePlayers } from '@/hooks/queries/usePlayers';
 import { usePendingInvites } from '@/hooks/queries/useTeamInvites';
 import { 
   Calendar, Users, TrendingUp, MessageSquare, 
-  Target, Award, Clock, BarChart3, Loader2 
+  Target, Award, Clock, BarChart3, Loader2, Plus
 } from 'lucide-react';
 import { cn } from '@kora/shared/utils';
 
@@ -95,11 +95,11 @@ function ActivityItem({
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const { teams, isLoading: teamsLoading, error: teamsError, refetch: refetchTeams } = useTeams();
+  const { activeTeam, isLoading: teamsLoading, hasTeams, error, refetchActiveTeam } = useActiveTeamOperations();
   const { data: invites = [] } = usePendingInvites();
   
-  // Get primary team data
-  const primaryTeam = teams?.[0];
+  // Use active team as primary team
+  const primaryTeam = activeTeam;
   
   // Fetch real data for the primary team
   const { data: upcomingTrainings, isLoading: trainingsLoading, error: trainingsError } = useUpcomingTrainings(primaryTeam?.id, 3);
@@ -203,8 +203,8 @@ export default function DashboardPage() {
     );
   }
   
-  // Show error state if teams failed to load
-  if (teamsError && !teams?.length) {
+  // Show connection error only if there's an actual error (API failure)
+  if (error && !isLoading) {
     return (
       <div className="text-center py-12">
         <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
         <p className="text-neutral-600 dark:text-neutral-400 mb-4">
           Non riesco a caricare le tue squadre. Verifica la connessione.
         </p>
-        <button onClick={() => refetchTeams()} className="btn-primary">
+        <button onClick={() => refetchActiveTeam()} className="btn-primary">
           Riprova
         </button>
       </div>
@@ -228,19 +228,90 @@ export default function DashboardPage() {
   // Show empty state if no teams
   if (!primaryTeam) {
     return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-          <Users className="w-8 h-8 text-neutral-400" />
+      <div className="space-y-8 pb-safe">
+        {/* Popup Inviti */}
+        {invites.length > 0 && (
+          <InvitePopup showOnMount={true} />
+        )}
+        
+        {/* Empty State Allineato con /teams */}
+        <div className="text-center py-16 px-6">
+          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-2xl">
+            <Users className="w-10 h-10 text-white" />
+          </div>
+          
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-4">
+            Benvenuto in Kora! 🏆
+          </h2>
+          
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+            La piattaforma per gestire la tua squadra sportiva con intelligenza artificiale. 
+            Crea la tua prima squadra e inizia a organizzare allenamenti, gestire giocatori e ricevere consigli dall'AI Coach.
+          </p>
+
+          {/* Features Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+            {/* Gestione Giocatori */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-lg border border-neutral-200 dark:border-neutral-800">
+              <div className="w-12 h-12 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-lg text-neutral-900 dark:text-white mb-2">
+                Gestisci Giocatori
+              </h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Organizza il roster, traccia presenze e gestisci ruoli in modo semplice e intuitivo
+              </p>
+            </div>
+
+            {/* Pianifica Allenamenti */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-lg border border-neutral-200 dark:border-neutral-800">
+              <div className="w-12 h-12 mx-auto mb-4 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-lg text-neutral-900 dark:text-white mb-2">
+                Pianifica Allenamenti
+              </h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Crea sessioni, monitora il progresso e tiene traccia degli obiettivi della squadra
+              </p>
+            </div>
+
+            {/* AI Coach */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-lg border border-neutral-200 dark:border-neutral-800">
+              <div className="w-12 h-12 mx-auto mb-4 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-lg text-neutral-900 dark:text-white mb-2">
+                AI Coach Personalizzato
+              </h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Ricevi consigli strategici, suggerimenti tattici e analisi delle performance
+              </p>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <a
+            href="/teams/new"
+            className={cn(
+              "inline-flex items-center gap-3 px-8 py-4 text-lg font-semibold",
+              "bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700",
+              "text-white rounded-2xl shadow-2xl hover:shadow-3xl",
+              "transition-all duration-300 hover:-translate-y-1 hover:scale-105",
+              "group relative overflow-hidden"
+            )}
+          >
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+            <Plus className="w-6 h-6 relative z-10" />
+            <span className="relative z-10">Crea la Tua Prima Squadra</span>
+            <Award className="w-5 h-5 relative z-10 opacity-75" />
+          </a>
+          
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-6">
+            🚀 Setup in meno di 2 minuti • 🎯 Strumenti professionali • 🤖 AI integrata
+          </p>
         </div>
-        <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
-          Benvenuto in Kora!
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-          Crea la tua prima squadra per iniziare.
-        </p>
-        <a href="/teams/new" className="btn-primary">
-          Crea Prima Squadra
-        </a>
       </div>
     );
   }

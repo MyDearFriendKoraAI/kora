@@ -1,287 +1,211 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useTeamStore } from '@/stores/team-store';
-import { SportIcon, getSportLabel } from './SportIcon';
-import type { Team } from '@/lib/supabase/team';
+import { useState } from 'react';
+import { ChevronDown, Check, Crown, Shield, Settings } from 'lucide-react';
+import { SportIcon } from '@/components/features/team/SportIcon';
+import { useActiveTeamOperations } from '@/hooks/queries/useActiveTeam';
+import { SPORT_LABELS, SportTypeEnum } from '@/lib/validations/team';
+import { cn } from '@kora/shared/utils';
 
 interface TeamSwitcherProps {
   variant?: 'desktop' | 'mobile';
-  className?: string;
+  showSettings?: boolean;
 }
 
-export function TeamSwitcher({ variant = 'desktop', className = '' }: TeamSwitcherProps) {
+export function TeamSwitcher({ variant = 'desktop', showSettings = false }: TeamSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-  
-  const { currentTeam, teams, setCurrentTeam } = useTeamStore();
+  const { 
+    activeTeam, 
+    availableTeams, 
+    hasMultipleTeams, 
+    canSwitchTeams, 
+    setActiveTeam,
+    isSettingActiveTeam 
+  } = useActiveTeamOperations();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Handle team selection
-  const handleTeamSelect = (team: Team) => {
-    setCurrentTeam(team);
-    setIsOpen(false);
-    
-    // Redirect to team's dashboard/overview
-    router.push(`/teams/${team.id}`);
-  };
-
-  // Get team initials for logo fallback
-  const getTeamInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Don't show switcher if no teams
-  if (teams.length === 0) {
-    return null;
+  if (!activeTeam) {
+    return (
+      <div className={cn(
+        'flex items-center justify-center rounded-xl',
+        variant === 'desktop' ? 'h-12 px-4' : 'h-10 px-3',
+        'bg-neutral-100 dark:bg-neutral-800 text-neutral-500'
+      )}>
+        <span className="text-sm">Nessuna squadra</span>
+      </div>
+    );
   }
 
-  // Single team - show name without dropdown
-  if (teams.length === 1) {
-    const team = teams[0];
+  if (!hasMultipleTeams) {
     return (
-      <div className={`flex items-center space-x-2 ${className}`}>
-        {/* Team Logo */}
-        <div className="relative">
-          {team.logo ? (
-            <img
-              src={team.logo}
-              alt={`${team.name} logo`}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-              style={{
-                backgroundColor: team.colors?.primary || '#3B82F6',
-              }}
-            >
-              {getTeamInitials(team.name)}
-            </div>
-          )}
+      <div className={cn(
+        'flex items-center gap-3 rounded-xl transition-colors',
+        variant === 'desktop' 
+          ? 'px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50' 
+          : 'px-3 py-2 bg-neutral-100 dark:bg-neutral-800'
+      )}>
+        <div className="p-2 bg-white dark:bg-neutral-700 rounded-lg shadow-sm">
+          <SportIcon sport={activeTeam.sport as SportTypeEnum} size="sm" className="w-4 h-4" />
         </div>
         
-        {/* Team Info */}
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {team.name}
-          </p>
-          <p className="text-xs text-gray-500">
-            {getSportLabel(team.sport)}
-          </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className={cn(
+              'font-semibold truncate',
+              variant === 'desktop' ? 'text-sm' : 'text-xs',
+              'text-neutral-900 dark:text-white'
+            )}>
+              {activeTeam.name}
+            </p>
+            {activeTeam.role === 'owner' ? (
+              <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />
+            ) : (
+              <Shield className="w-3 h-3 text-purple-500 flex-shrink-0" />
+            )}
+          </div>
+          {variant === 'desktop' && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+              {SPORT_LABELS[activeTeam.sport as SportTypeEnum]}
+              {activeTeam.category && ` • ${activeTeam.category}`}
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  // Multiple teams - show dropdown
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
-      {/* Current Team Button */}
+    <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`
-          flex items-center space-x-2 w-full text-left px-3 py-2 rounded-lg
-          hover:bg-gray-50 transition-colors
-          ${variant === 'mobile' ? 'px-4 py-3' : ''}
-        `}
+        disabled={!canSwitchTeams}
+        className={cn(
+          'flex items-center gap-3 w-full rounded-xl transition-all',
+          variant === 'desktop' 
+            ? 'px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50' 
+            : 'px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          isOpen && 'bg-neutral-50 dark:bg-neutral-800/50'
+        )}
       >
-        {/* Current Team Logo */}
-        <div className="relative">
-          {currentTeam?.logo ? (
-            <img
-              src={currentTeam.logo}
-              alt={`${currentTeam.name} logo`}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-              style={{
-                backgroundColor: currentTeam?.colors?.primary || '#3B82F6',
-              }}
-            >
-              {currentTeam ? getTeamInitials(currentTeam.name) : 'T'}
-            </div>
+        <div className="p-2 bg-white dark:bg-neutral-700 rounded-lg shadow-sm">
+          <SportIcon sport={activeTeam.sport as SportTypeEnum} size="sm" className="w-4 h-4" />
+        </div>
+        
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2">
+            <p className={cn(
+              'font-semibold truncate',
+              variant === 'desktop' ? 'text-sm' : 'text-xs',
+              'text-neutral-900 dark:text-white'
+            )}>
+              {activeTeam.name}
+            </p>
+            {activeTeam.role === 'owner' ? (
+              <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />
+            ) : (
+              <Shield className="w-3 h-3 text-purple-500 flex-shrink-0" />
+            )}
+          </div>
+          {variant === 'desktop' && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+              {SPORT_LABELS[activeTeam.sport as SportTypeEnum]}
+              {activeTeam.category && ` • ${activeTeam.category}`}
+            </p>
           )}
         </div>
         
-        {/* Current Team Info */}
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {currentTeam?.name || 'Seleziona squadra'}
-          </p>
-          <p className="text-xs text-gray-500">
-            {currentTeam ? getSportLabel(currentTeam.sport) : 'Nessuna squadra'}
-          </p>
-        </div>
-        
-        {/* Dropdown Arrow */}
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className={cn(
+          'w-4 h-4 text-neutral-400 transition-transform flex-shrink-0',
+          isOpen && 'rotate-180'
+        )} />
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown */}
       {isOpen && (
-        <div
-          className={`
-            absolute z-50 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200
-            ${variant === 'mobile' ? 'w-72' : 'min-w-64'}
-          `}
-        >
-          <div className="py-1">
-            {/* Team Options */}
-            {teams.map((team) => (
-              <button
-                key={team.id}
-                onClick={() => handleTeamSelect(team)}
-                className={`
-                  w-full flex items-center space-x-3 px-4 py-3 text-left
-                  hover:bg-gray-50 transition-colors
-                  ${currentTeam?.id === team.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''}
-                `}
-              >
-                {/* Team Logo */}
-                <div className="relative">
-                  {team.logo ? (
-                    <img
-                      src={team.logo}
-                      alt={`${team.name} logo`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                      style={{
-                        backgroundColor: team.colors?.primary || '#3B82F6',
-                      }}
-                    >
-                      {getTeamInitials(team.name)}
-                    </div>
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setIsOpen(false)} 
+          />
+          
+          {/* Menu */}
+          <div className={cn(
+            'absolute top-full left-0 right-0 mt-2 z-20',
+            'bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700',
+            'max-h-80 overflow-y-auto'
+          )}>
+            <div className="py-2">
+              {availableTeams.map((team: any) => (
+                <button
+                  key={team.id}
+                  onClick={() => {
+                    if (team.id !== activeTeam.id) {
+                      setActiveTeam({ teamId: team.id });
+                    }
+                    setIsOpen(false);
+                  }}
+                  disabled={isSettingActiveTeam}
+                  className={cn(
+                    'flex items-center gap-3 w-full px-4 py-3 text-left',
+                    'hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    team.id === activeTeam.id && 'bg-primary-50 dark:bg-primary-900/20'
                   )}
-                </div>
-                
-                {/* Team Info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {team.name}
+                >
+                  <div className="p-2 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                    <SportIcon sport={team.sport as SportTypeEnum} size="sm" className="w-4 h-4" />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+                        {team.name}
+                      </p>
+                      {team.role === 'owner' ? (
+                        <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      ) : (
+                        <Shield className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                      {SPORT_LABELS[team.sport as SportTypeEnum]}
+                      {team.category && ` • ${team.category}`}
                     </p>
-                    <span className="inline-flex px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                      Mister
+                  </div>
+                  
+                  {team.id === activeTeam.id && (
+                    <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Settings Link (if enabled) */}
+            {showSettings && variant === 'desktop' && (
+              <>
+                <div className="border-t border-neutral-200 dark:border-neutral-700" />
+                <div className="py-2">
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      // Navigate to settings
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <div className="p-2 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                      <Settings className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Gestisci Squadre
                     </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <SportIcon sport={team.sport} size="sm" />
-                    <span className="text-xs text-gray-500">
-                      {getSportLabel(team.sport)}
-                    </span>
-                    {team.category && (
-                      <>
-                        <span className="text-xs text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">{team.category}</span>
-                      </>
-                    )}
-                  </div>
+                  </button>
                 </div>
-                
-                {/* Current Team Indicator */}
-                {currentTeam?.id === team.id && (
-                  <div className="flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            ))}
-            
-            {/* Divider */}
-            <div className="border-t border-gray-100 my-1"></div>
-            
-            {/* Create New Team */}
-            {teams.length < 2 ? (
-              <Link
-                href="/teams/new"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors text-blue-600"
-              >
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Crea nuova squadra</p>
-                  <p className="text-xs text-gray-500">
-                    {2 - teams.length} squadra disponibile
-                  </p>
-                </div>
-              </Link>
-            ) : (
-              <div className="flex items-center space-x-3 px-4 py-3 text-gray-400">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Limite raggiunto</p>
-                  <p className="text-xs text-gray-500">
-                    Massimo 2 squadre per account
-                  </p>
-                </div>
-              </div>
+              </>
             )}
-            
-            {/* Manage Teams */}
-            <Link
-              href="/teams"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors text-gray-700"
-            >
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Gestisci squadre</p>
-                <p className="text-xs text-gray-500">
-                  Visualizza tutte le squadre
-                </p>
-              </div>
-            </Link>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

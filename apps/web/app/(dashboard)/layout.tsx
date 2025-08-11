@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserMenu } from "@/components/features/auth/UserMenu";
 import { TeamSwitcher } from "@/components/features/team/TeamSwitcher";
-import { useTeams } from "@/hooks/queries/useTeams";
+import { useActiveTeamOperations } from "@/hooks/queries/useActiveTeam";
 import { usePrefetch } from "@/hooks/queries/usePrefetch";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { Shield, Lock } from "lucide-react";
@@ -18,7 +18,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   
   // Load user teams data with React Query
-  const { teams, isLoading } = useTeams();
+  const { activeTeam, isLoading } = useActiveTeamOperations();
   
   // Check user access permissions
   const { 
@@ -44,7 +44,7 @@ export default function DashboardLayout({
       tooltip: null
     },
     { 
-      name: "Squadre", 
+      name: "Squadra", 
       href: "/teams",
       enabled: canAccessTeams,
       tooltip: null
