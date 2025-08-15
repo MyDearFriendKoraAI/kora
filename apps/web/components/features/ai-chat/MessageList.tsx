@@ -2,21 +2,21 @@
 
 import { forwardRef } from 'react';
 import { Bot, User, Clock, AlertCircle } from 'lucide-react';
-import { Message } from './AIChat';
-import { OptimizationStats } from './OptimizationStats';
+import { AssistantMessage } from '@/lib/openai/assistant-client';
 import { cn } from '@/lib/utils';
 
 interface MessageListProps {
-  messages: Message[];
+  messages: AssistantMessage[];
   isLoading?: boolean;
+  isTyping?: boolean;
   className?: string;
 }
 
 export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
-  ({ messages, isLoading, className }, ref) => {
+  ({ messages, isLoading, isTyping, className }, ref) => {
     if (messages.length === 0) {
       return (
-        <div className={cn('flex-1 flex items-center justify-center p-8', className)}>
+        <div className={cn('flex items-center justify-center p-8', className)}>
           <div className="text-center max-w-md">
             <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <Bot className="h-8 w-8 text-white" />
@@ -52,14 +52,14 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
     }
 
     return (
-      <div ref={ref} className={cn('flex-1 overflow-y-auto', className)}>
+      <div ref={ref} className={cn('', className)}>
         <div className="space-y-4 p-4">
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
           
-          {/* Loading indicator */}
-          {isLoading && (
+          {/* Loading/Typing indicators */}
+          {(isLoading || isTyping) && (
             <div className="flex justify-start">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
@@ -72,7 +72,9 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
                       <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
                       <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
                     </div>
-                    <span className="text-xs text-muted-foreground">Kora sta analizzando...</span>
+                    <span className="text-xs text-muted-foreground">
+                      {isTyping ? 'Kora sta scrivendo...' : 'Kora sta pensando...'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -87,7 +89,7 @@ export const MessageList = forwardRef<HTMLDivElement, MessageListProps>(
 MessageList.displayName = 'MessageList';
 
 interface MessageBubbleProps {
-  message: Message;
+  message: AssistantMessage;
 }
 
 function MessageBubble({ message }: MessageBubbleProps) {
@@ -123,15 +125,11 @@ function MessageBubble({ message }: MessageBubbleProps) {
           <MessageContent content={message.content} />
         </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            <span>{formatTime(message.timestamp)}</span>
-          </div>
-          
-          {/* Mostra statistiche di ottimizzazione per risposte AI */}
-          {message.role === 'assistant' && message.metadata && (
-            <OptimizationStats metadata={message.metadata} />
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+          <Clock className="h-3 w-3" />
+          <span>{formatTime(message.timestamp)}</span>
+          {message.role === 'assistant' && (
+            <span className="text-xs text-blue-600 ml-2">AI Coach</span>
           )}
         </div>
       </div>
@@ -219,8 +217,18 @@ function MessageContent({ content }: MessageContentProps) {
 }
 
 function formatTime(date: Date): string {
-  return new Intl.DateTimeFormat('it-IT', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
+  // Verifica che la data sia valida
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return '--:--';
+  }
+  
+  try {
+    return new Intl.DateTimeFormat('it-IT', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch (error) {
+    console.warn('Errore formattazione data:', error);
+    return '--:--';
+  }
 }

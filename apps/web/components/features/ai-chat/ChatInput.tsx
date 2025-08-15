@@ -14,12 +14,10 @@ interface ChatInputProps {
 }
 
 const QUICK_SUGGESTIONS = [
-  "Come posso migliorare la condizione fisica della squadra?",
-  "Suggeriscimi una formazione tattica per il prossimo match",
-  "Come motivare i giocatori dopo una sconfitta?",
-  "Quali esercizi per prevenire infortuni muscolari?",
-  "Piano allenamento per migliorare il possesso palla",
-  "Come gestire un giocatore con bassa presenza agli allenamenti?",
+  "Crea un piano di allenamento per questa settimana",
+  "Analizza la formazione ideale per la squadra",
+  "Consigli per migliorare il morale del team",
+  "Suggerimenti per prevenire infortuni",
 ];
 
 export function ChatInput({ 
@@ -33,11 +31,11 @@ export function ChatInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
+  // Auto-resize textarea (con limite)
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 80) + 'px';
     }
   }, [message]);
 
@@ -152,7 +150,7 @@ export function ChatInput({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="min-h-[40px] max-h-[120px] resize-none pr-12"
+              className="min-h-[40px] max-h-[80px] resize-none pr-12"
               rows={1}
             />
             

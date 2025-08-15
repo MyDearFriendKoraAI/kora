@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { MessageSquare, Bot, Settings } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { useAIChat } from '@/hooks/useAIChat';
+import { QuickPrompts } from './QuickPrompts';
+import { RateLimitIndicator } from './RateLimitIndicator';
+import { ThreadStatus } from './ThreadStatus';
+import { useAssistantChat } from '@/hooks/useAssistantChat';
+import { useActiveTeamOperations } from '@/hooks/queries/useActiveTeam';
+import { TeamContext } from '@/lib/openai/assistant-client';
 import { cn } from '@/lib/utils';
 
 interface AIChatProps {
@@ -14,36 +19,36 @@ interface AIChatProps {
   className?: string;
 }
 
-export interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
-  isLoading?: boolean;
-  metadata?: {
-    requestType?: string;
-    promptTokens?: number;
-    optimization?: {
-      tokensUsed: number;
-      tokensOverhead: number;
-      efficiency: string;
-    };
-  };
-}
+// Usa i tipi dall'Assistant API
+import { AssistantMessage, ChatState } from '@/hooks/useAssistantChat';
 
 export default function AIChat({ teamId, className }: AIChatProps) {
+  const { activeTeam, currentUser } = useActiveTeamOperations();
+  
+  // Costruisci contesto team per l'Assistant
+  const teamContext: TeamContext = {
+    teamName: activeTeam?.name || 'Squadra',
+    sport: activeTeam?.sport || 'CALCIO',
+    category: activeTeam?.category || 'Sconosciuta',
+    activePlayersCount: activeTeam?.players?.length || 0,
+    userRole: activeTeam?.coachId === currentUser?.id ? 'owner' : 'assistant',
+    userName: currentUser ? `${currentUser.nome} ${currentUser.cognome}` : 'Allenatore',
+  };
+
   const {
     messages,
-    isLoading,
+    state,
     error,
+    threadId,
     remainingRequests,
     sendMessage,
+    resetThread,
     clearError,
-    conversationId,
-  } = useAIChat(teamId);
+    isTyping,
+  } = useAssistantChat(teamId, teamContext);
 
-  const [promptType, setPromptType] = useState<'trainingPlan' | 'tacticalAnalysis' | 'motivationalCoaching' | 'injuryPrevention'>('trainingPlan');
   const [showSettings, setShowSettings] = useState(false);
+  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom quando arrivano nuovi messaggi
@@ -54,20 +59,22 @@ export default function AIChat({ teamId, className }: AIChatProps) {
   }, [messages]);
 
   const handleSendMessage = async (message: string) => {
-    await sendMessage(message, promptType);
+    await sendMessage(message);
   };
 
-  const promptTypeLabels = {
-    trainingPlan: 'Piano Allenamento',
-    tacticalAnalysis: 'Analisi Tattica',
-    motivationalCoaching: 'Coaching Motivazionale',
-    injuryPrevention: 'Prevenzione Infortuni',
+  const handleResetChat = () => {
+    if (confirm('Sei sicuro di voler iniziare una nuova conversazione? Tutti i messaggi precedenti andranno persi.')) {
+      resetThread();
+    }
   };
+
+  const isLoading = state === 'sending' || state === 'assistant-processing' || state === 'receiving';
+  const isDisabled = isLoading || state === 'rate-limited' || (remainingRequests !== undefined && remainingRequests <= 0);
 
   return (
-    <Card className={cn('flex flex-col h-full', className)}>
+    <Card className={cn('flex flex-col h-full max-h-[600px]', className)}>
       {/* Header */}
-      <CardHeader className="pb-3 border-b">
+      <CardHeader className="pb-3 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
@@ -87,8 +94,19 @@ export default function AIChat({ teamId, className }: AIChatProps) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowQuickPrompts(!showQuickPrompts)}
+              className="h-8 w-8 p-0"
+              title="Suggerimenti rapidi"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowSettings(!showSettings)}
               className="h-8 w-8 p-0"
+              title="Impostazioni"
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -97,30 +115,58 @@ export default function AIChat({ teamId, className }: AIChatProps) {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-            <p className="text-sm font-medium mb-2">Tipo di Consulenza:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(promptTypeLabels).map(([type, label]) => (
-                <Button
-                  key={type}
-                  variant={promptType === type ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPromptType(type as typeof promptType)}
-                  className="text-xs h-8"
-                >
-                  {label}
-                </Button>
-              ))}
+          <div className="mt-3 space-y-3">
+            {/* Thread Status */}
+            <ThreadStatus
+              state={state}
+              threadId={threadId}
+              messageCount={messages.length}
+              onResetThread={handleResetChat}
+            />
+            
+            {/* Rate Limit Info */}
+            {currentUser && (
+              <RateLimitIndicator
+                remainingRequests={remainingRequests}
+                userTier={currentUser.tier || 'FREE'}
+              />
+            )}
+            
+            {/* Team Context Info */}
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium mb-2">Contesto Squadra</p>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Nome:</span>
+                  <span>{teamContext.teamName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Sport:</span>
+                  <span>{teamContext.sport}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Categoria:</span>
+                  <span>{teamContext.category}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Giocatori:</span>
+                  <span>{teamContext.activePlayersCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Ruolo:</span>
+                  <span>{teamContext.userRole === 'owner' ? 'Allenatore' : 'Assistente'}</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </CardHeader>
 
-      {/* Messages Area */}
-      <CardContent className="flex-1 flex flex-col p-0">
+      {/* Messages Area - con min-height per evitare collasso */}
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
         {/* Error Banner */}
         {error && (
-          <div className="mx-4 mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="mx-4 mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex-shrink-0">
             <div className="flex items-center justify-between">
               <p className="text-sm text-destructive">{error}</p>
               <Button 
@@ -135,23 +181,39 @@ export default function AIChat({ teamId, className }: AIChatProps) {
           </div>
         )}
 
-        {/* Messages List */}
-        <div className="flex-1 overflow-hidden">
+        {/* Messages List - con overflow e flex-1 per occupare spazio disponibile */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <MessageList 
             messages={messages}
             isLoading={isLoading}
+            isTyping={isTyping}
           />
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t bg-background">
+        {/* Quick Prompts - opzionale */}
+        {showQuickPrompts && (
+          <QuickPrompts
+            onSelectPrompt={(prompt) => {
+              handleSendMessage(prompt);
+              setShowQuickPrompts(false);
+            }}
+            disabled={isDisabled}
+          />
+        )}
+        
+        {/* Input Area - sempre visibile in fondo */}
+        <div className="border-t bg-background flex-shrink-0">
           <ChatInput
             onSendMessage={handleSendMessage}
-            disabled={isLoading || (remainingRequests !== undefined && remainingRequests <= 0)}
+            disabled={isDisabled}
             placeholder={
               remainingRequests === 0 
                 ? "Limite giornaliero raggiunto" 
+                : state === 'rate-limited'
+                ? "Limite raggiunto, riprova domani"
+                : isLoading
+                ? "L'AI sta elaborando..."
                 : "Chiedi consigli al tuo AI Coach..."
             }
           />

@@ -28,9 +28,5 @@ export default function ChatInterface() {
     );
   }
 
-  return (
-    <div className="h-[600px]">
-      <AIChat teamId={activeTeam.id} />
-    </div>
-  );
+  return <AIChat teamId={activeTeam.id} className="h-[600px]" />;
 }

@@ -1,24 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import { prisma } from '@/lib/prisma';
-import { openai } from '@/lib/openai/client';
-import { buildAIContextCached } from '@/lib/openai/context-builder';
-import { buildOptimizedPrompt } from '@/lib/openai/prompts-optimized';
-import { RATE_LIMITS, TOKEN_LIMITS } from '@/lib/openai/prompts';
 import { auth } from '@/lib/supabase/auth';
+import { assistantClient, TeamContext, AssistantError } from '@/lib/openai/assistant-client';
+import { prisma } from '@/lib/prisma';
 import { UserTier } from '@prisma/client';
+
+// Rate limits per tier
+const RATE_LIMITS = {
+  FREE: { daily: 5 },
+  LEVEL1: { daily: 20 },
+  PREMIUM: { daily: 100 },
+} as const;
 
 interface ChatRequest {
   message: string;
   teamId: string;
-  conversationId?: string;
-  promptType?: 'trainingPlan' | 'tacticalAnalysis' | 'motivationalCoaching' | 'injuryPrevention';
+  teamContext: TeamContext;
+  threadId?: string;
 }
 
 interface ChatResponse {
   success: boolean;
-  message?: string;
-  conversationId?: string;
+  threadId?: string;
+  runId?: string;
   remainingRequests?: number;
   error?: string;
   errorCode?: string;
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
 
     // Parse richiesta
     const body: ChatRequest = await request.json();
-    const { message, teamId, conversationId, promptType = 'trainingPlan' } = body;
+    const { message, teamId, teamContext, threadId } = body;
 
     // Validazione input
     if (!message?.trim()) {
@@ -93,8 +96,48 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
       );
     }
 
-    // Verifica API key OpenAI
-    if (!process.env.OPENAI_API_KEY) {
+    // Ottieni o crea thread per la conversazione
+    let activeThreadId = threadId;
+    
+    if (!activeThreadId) {
+      const threadInfo = await assistantClient.getOrCreateThread(user.id, teamId);
+      activeThreadId = threadInfo.threadId;
+    }
+
+    // Invia messaggio all'Assistant
+    const { runId } = await assistantClient.sendMessage(
+      activeThreadId,
+      message,
+      teamContext
+    );
+
+    // Aggiorna contatori
+    await assistantClient.updateMessageCount(user.id, teamId);
+    await updateRateLimit(user.id, userData.tier);
+
+    return NextResponse.json({
+      success: true,
+      threadId: activeThreadId,
+      runId,
+      remainingRequests: Math.max(0, RATE_LIMITS[userData.tier].daily - rateLimitResult.currentCount - 1),
+    });
+
+  } catch (error: any) {
+    console.error('Errore API Chat Assistant:', error);
+
+    // Gestione errori specifici dell'Assistant
+    if (error.message?.includes(AssistantError.RATE_LIMITED)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Hai raggiunto il limite giornaliero di richieste',
+          errorCode: 'RATE_LIMITED',
+        },
+        { status: 429 }
+      );
+    }
+
+    if (error.message?.includes(AssistantError.ASSISTANT_UNAVAILABLE)) {
       return NextResponse.json(
         {
           success: false,
@@ -105,118 +148,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
       );
     }
 
-    // Costruisci contesto AI
-    const context = await buildAIContextCached(teamId, user.id, {
-      includeHistory: true,
-      maxHistoryMessages: TOKEN_LIMITS[userData.tier].maxHistory,
-      includePlayerDetails: userData.tier !== 'FREE',
-    });
-
-    // Costruisci prompt ottimizzato
-    const { prompt: completePrompt, validation, requestType } = buildOptimizedPrompt(
-      context,
-      message,
-      userData.tier,
-      context.previousMessages.slice(-4) // Solo ultimi 4 messaggi
-    );
-
-    // Valida token limits per tier
-    if (!validation.isValid) {
+    if (error.message?.includes(AssistantError.CONTEXT_TOO_LONG)) {
       return NextResponse.json(
         {
           success: false,
-          error: validation.suggestion || 'Richiesta troppo lunga per il tuo piano',
-          errorCode: 'PROMPT_TOO_LONG',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Chiamata a OpenAI
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: completePrompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: TOKEN_LIMITS[userData.tier].maxTokens,
-      user: `kora-${user.id}`, // Per tracking
-    });
-
-    const aiResponse = completion.choices[0]?.message?.content;
-    if (!aiResponse) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Risposta vuota dall\'AI',
-          errorCode: 'EMPTY_RESPONSE',
-        },
-        { status: 500 }
-      );
-    }
-
-    // Salva conversazione nel database
-    const savedConversation = await saveConversation(
-      user.id,
-      teamId,
-      message,
-      aiResponse,
-      conversationId
-    );
-
-    // Aggiorna rate limit
-    await updateRateLimit(user.id, userData.tier);
-
-    return NextResponse.json({
-      success: true,
-      message: aiResponse,
-      conversationId: savedConversation.conversationId,
-      remainingRequests: Math.max(0, RATE_LIMITS[userData.tier].daily - rateLimitResult.currentCount - 1),
-      metadata: {
-        requestType,
-        promptTokens: validation.tokens,
-        optimization: {
-          tokensUsed: validation.tokens,
-          tokensOverhead: validation.overhead,
-          efficiency: `${Math.round((1 - validation.overhead / validation.tokens) * 100)}%`
-        }
-      }
-    });
-
-  } catch (error: any) {
-    console.error('Errore API Chat AI:', error);
-
-    // Gestione errori specifici di OpenAI
-    if (error.error?.code === 'rate_limit_exceeded') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Limite di richieste OpenAI raggiunto. Riprova tra qualche minuto.',
-          errorCode: 'OPENAI_RATE_LIMITED',
-        },
-        { status: 429 }
-      );
-    }
-
-    if (error.error?.code === 'insufficient_quota') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Quota OpenAI esaurita. Servizio temporaneamente non disponibile.',
-          errorCode: 'OPENAI_QUOTA_EXCEEDED',
-        },
-        { status: 503 }
-      );
-    }
-
-    if (error.error?.code === 'context_length_exceeded') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Conversazione troppo lunga. Inizia una nuova chat.',
+          error: 'Conversazione troppo lunga, iniziane una nuova',
           errorCode: 'CONTEXT_TOO_LONG',
         },
         { status: 400 }
@@ -234,7 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
   }
 }
 
-// GET endpoint per recuperare conversazioni
+// GET endpoint per recuperare messaggi o controllare thread
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const user = await auth();
@@ -243,53 +179,66 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('teamId');
-    const conversationId = searchParams.get('conversationId');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const threadId = searchParams.get('threadId');
+    const latest = searchParams.get('latest') === 'true';
 
-    if (conversationId) {
-      // Recupera conversazione specifica
-      const conversation = await prisma.conversation.findUnique({
-        where: { id: conversationId, userId: user.id },
-        include: {
-          messages: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              id: true,
-              role: true,
-              content: true,
-              createdAt: true,
-            },
-          },
-        },
-      });
-
-      return NextResponse.json({ conversation });
+    if (!threadId) {
+      return NextResponse.json({ error: 'Thread ID richiesto' }, { status: 400 });
     }
 
-    // Recupera lista conversazioni per utente
-    const conversations = await prisma.conversation.findMany({
-      where: { userId: user.id },
-      orderBy: { updatedAt: 'desc' },
-      take: limit,
-      select: {
-        id: true,
-        titolo: true,
-        createdAt: true,
-        updatedAt: true,
-        messages: {
-          take: 1,
-          orderBy: { createdAt: 'desc' },
-          select: { content: true },
-        },
-      },
-    });
-
-    return NextResponse.json({ conversations });
+    if (latest) {
+      // Recupera solo l'ultimo messaggio dell'Assistant
+      const message = await assistantClient.getLatestAssistantMessage(threadId);
+      return NextResponse.json({ 
+        success: true,
+        message 
+      });
+    } else {
+      // Recupera tutti i messaggi del thread
+      const messages = await assistantClient.getThreadMessages(threadId);
+      return NextResponse.json({ 
+        success: true,
+        messages 
+      });
+    }
 
   } catch (error) {
-    console.error('Errore GET Chat AI:', error);
-    return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
+    console.error('Errore GET Chat Assistant:', error);
+    return NextResponse.json({ 
+      success: false,
+      error: 'Errore interno del server' 
+    }, { status: 500 });
+  }
+}
+
+// DELETE endpoint per eliminare thread
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  try {
+    const user = await auth();
+    if (!user) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { teamId } = body;
+
+    if (!teamId) {
+      return NextResponse.json({ error: 'Team ID richiesto' }, { status: 400 });
+    }
+
+    await assistantClient.deleteThread(user.id, teamId);
+    
+    return NextResponse.json({ 
+      success: true,
+      message: 'Thread eliminato con successo' 
+    });
+
+  } catch (error) {
+    console.error('Errore DELETE Chat Assistant:', error);
+    return NextResponse.json({ 
+      success: false,
+      error: 'Errore interno del server' 
+    }, { status: 500 });
   }
 }
 
@@ -340,79 +289,6 @@ async function updateRateLimit(userId: string, tier: UserTier): Promise<void> {
     count: cached.count + 1,
     resetTime: new Date().setHours(23, 59, 59, 999), // Reset a mezzanotte
   });
-}
-
-async function saveConversation(
-  userId: string,
-  teamId: string,
-  userMessage: string,
-  aiResponse: string,
-  conversationId?: string
-): Promise<{ conversationId: string }> {
-  let conversation;
-
-  if (conversationId) {
-    // Aggiungi messaggi a conversazione esistente
-    conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId, userId },
-    });
-
-    if (!conversation) {
-      throw new Error('Conversazione non trovata');
-    }
-  } else {
-    // Crea nuova conversazione
-    const title = generateConversationTitle(userMessage);
-    conversation = await prisma.conversation.create({
-      data: {
-        userId,
-        titolo: title,
-      },
-    });
-  }
-
-  // Salva messaggi
-  await prisma.message.createMany({
-    data: [
-      {
-        conversationId: conversation.id,
-        role: 'user',
-        content: userMessage,
-      },
-      {
-        conversationId: conversation.id,
-        role: 'assistant',
-        content: aiResponse,
-      },
-    ],
-  });
-
-  // Aggiorna timestamp conversazione
-  await prisma.conversation.update({
-    where: { id: conversation.id },
-    data: { updatedAt: new Date() },
-  });
-
-  return { conversationId: conversation.id };
-}
-
-function generateConversationTitle(firstMessage: string): string {
-  const cleanMessage = firstMessage.trim().substring(0, 50);
-  
-  if (cleanMessage.toLowerCase().includes('allenamento')) {
-    return `Allenamento - ${cleanMessage}`;
-  }
-  if (cleanMessage.toLowerCase().includes('tattica')) {
-    return `Tattica - ${cleanMessage}`;
-  }
-  if (cleanMessage.toLowerCase().includes('motivazione')) {
-    return `Motivazione - ${cleanMessage}`;
-  }
-  if (cleanMessage.toLowerCase().includes('infortunio')) {
-    return `Infortuni - ${cleanMessage}`;
-  }
-  
-  return cleanMessage + (cleanMessage.length === 50 ? '...' : '');
 }
 
 // Cleanup rate limit cache periodico
