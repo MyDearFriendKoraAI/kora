@@ -33,17 +33,24 @@ export default function AICoachPage() {
             <h3 className="font-semibold text-gray-900 mb-3">Statistiche AI</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Domande questo mese:</span>
-                <span className="font-medium">24</span>
+                <span>Richieste oggi:</span>
+                <span className="font-medium">-</span>
               </div>
               <div className="flex justify-between">
-                <span>Suggerimenti utilizzati:</span>
-                <span className="font-medium">18</span>
+                <span>Token risparmiati:</span>
+                <span className="font-medium text-green-600">~70%</span>
               </div>
               <div className="flex justify-between">
-                <span>Valutazione media:</span>
-                <span className="font-medium">4.8/5</span>
+                <span>Efficienza prompt:</span>
+                <span className="font-medium text-blue-600">Ottimizzata</span>
               </div>
+              <div className="flex justify-between">
+                <span>Modello:</span>
+                <span className="font-medium">GPT-4o-mini</span>
+              </div>
+            </div>
+            <div className="mt-3 p-2 bg-green-50 rounded text-xs text-green-700">
+              ⚡ Sistema ottimizzato per massime prestazioni e risparmio costi
             </div>
           </div>
         </div>

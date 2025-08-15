@@ -176,3 +176,20 @@ export async function updatePassword(newPassword: string) {
     throw new Error(error.message || AUTH_ERRORS.GENERIC_ERROR);
   }
 }
+
+// Per API routes - funzione semplificata che restituisce user Supabase
+export async function auth() {
+  const supabase = createClient();
+  
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      return null;
+    }
+    
+    return user;
+  } catch (error) {
+    return null;
+  }
+}
